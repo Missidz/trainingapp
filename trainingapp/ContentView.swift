@@ -7,12 +7,14 @@
 
 import SwiftUI
 import SwiftData
+import Foundation
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showWorkoutView = false
     @State private var showProgressView = false
     @State private var showQuestsView = false
+    @State private var showNutritionView = false
     
     var body: some View {
         NavigationView {
@@ -64,6 +66,14 @@ struct ContentView: View {
                             color: .indigo,
                             action: { showQuestsView = true }
                         )
+                        
+                        NavigationButton(
+                            title: "Nutrition Hub",
+                            subtitle: "Track your meals",
+                            icon: "fork.knife",
+                            color: .green,
+                            action: { showNutritionView = true }
+                        )
                     }
                     
                     Spacer()
@@ -81,6 +91,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showQuestsView) {
             SimpleQuestsView()
+        }
+        .sheet(isPresented: $showNutritionView) {
+            NutritionView()
         }
     }
 }
@@ -235,19 +248,19 @@ struct SimpleWorkoutView: View {
                     TabView(selection: $selectedTab) {
                         CustomTrainingView()
                             .tag(0)
-                        
                         DiscoverTrainingView()
                             .tag(1)
                     }
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 }
             }
-            .navigationBarBackButtonHidden(true)
+            .navigationTitle("Training")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundColor(.red)
+                    .foregroundColor(.blue)
                 }
             }
         }
@@ -257,178 +270,168 @@ struct SimpleWorkoutView: View {
 
 // MARK: - Custom Training View
 struct CustomTrainingView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var exerciseName = ""
-    @State private var sets = 1
-    @State private var reps = 10
-    @State private var weight = 0.0
+    @State private var selectedMuscleGroup = "All"
+    @State private var showCreateWorkout = false
+    
+    let muscleGroups = ["All", "Chest", "Back", "Legs", "Arms", "Shoulders", "Core"]
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 30) {
-                VStack(spacing: 20) {
-                    VStack(alignment: .leading) {
-                        Text("Exercise")
-                            .foregroundColor(.white.opacity(0.8))
-                        TextField("Enter exercise name", text: $exerciseName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
-                    
-                    HStack(spacing: 30) {
-                        VStack {
-                            Text("Sets")
-                                .foregroundColor(.white.opacity(0.8))
-                            Stepper(value: $sets, in: 1...50) {
-                                Text("\(sets)")
-                                    .foregroundColor(.white)
-                                    .font(.title2)
-                            }
-                        }
-                        
-                        VStack {
-                            Text("Reps")
-                                .foregroundColor(.white.opacity(0.8))
-                            Stepper(value: $reps, in: 1...100) {
-                                Text("\(reps)")
-                                    .foregroundColor(.white)
-                                    .font(.title2)
-                            }
-                        }
-                    }
-                    
-                    VStack(alignment: .leading) {
-                        Text("Weight (kg)")
-                            .foregroundColor(.white.opacity(0.8))
-                        TextField("0", value: $weight, format: .number)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
-                }
-                .padding(20)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(16)
-                
-                // XP Preview
-                VStack {
-                    Text("XP Gain Preview")
-                        .font(.headline)
+            VStack(spacing: 20) {
+                // Quick Start Section
+                VStack(alignment: .leading, spacing: 15) {
+                    Text("⚡ Quick Start")
+                        .font(.title2)
+                        .fontWeight(.bold)
                         .foregroundColor(.white)
                     
-                    Text("\(sets * reps) XP")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.blue)
+                    Button {
+                        showCreateWorkout = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.blue)
+                            
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Create New Workout")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                Text("Design your custom training session")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.blue)
+                        }
+                        .padding(20)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(16)
+                    }
                 }
-                .padding()
-                .background(Color.blue.opacity(0.1))
-                .cornerRadius(12)
                 
-                Button("Complete Training") {
-                    // Add training completion logic here
-                    dismiss()
+                // Muscle Group Filter
+                VStack(alignment: .leading, spacing: 15) {
+                    Text("🎯 Target Muscle Group")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(muscleGroups, id: \.self) { group in
+                                Button {
+                                    selectedMuscleGroup = group
+                                } label: {
+                                    Text(group)
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(selectedMuscleGroup == group ? .black : .white)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(selectedMuscleGroup == group ? Color.blue : Color.white.opacity(0.2))
+                                        .cornerRadius(20)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
                 }
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(
-                    LinearGradient(
-                        colors: [.blue, .purple],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .cornerRadius(12)
-                .shadow(color: .blue.opacity(0.3), radius: 10)
+                
+                // Recent Workouts
+                VStack(alignment: .leading, spacing: 15) {
+                    Text("📚 Recent Workouts")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    VStack(spacing: 12) {
+                        WorkoutCard(
+                            name: "Upper Body Power",
+                            duration: "45 min",
+                            exercises: 8,
+                            lastPerformed: "2 days ago",
+                            difficulty: .normal
+                        )
+                        
+                        WorkoutCard(
+                            name: "Leg Day Destroyer",
+                            duration: "60 min",
+                            exercises: 10,
+                            lastPerformed: "5 days ago",
+                            difficulty: .hard
+                        )
+                        
+                        WorkoutCard(
+                            name: "Core Crusher",
+                            duration: "30 min",
+                            exercises: 6,
+                            lastPerformed: "1 week ago",
+                            difficulty: .easy
+                        )
+                    }
+                }
                 
                 Spacer(minLength: 50)
             }
             .padding()
+        }
+        .sheet(isPresented: $showCreateWorkout) {
+            CreateWorkoutView()
         }
     }
 }
 
 // MARK: - Discover Training View
 struct DiscoverTrainingView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedWorkout: PresetWorkout? = nil
-    
-    let presetWorkouts = [
-        PresetWorkout(
-            name: "Pectoraux Power",
-            emoji: "💪",
-            description: "Développez vos pectoraux avec cet entraînement intense",
-            exercises: [
-                PresetExercise(name: "Push-ups", sets: 3, reps: 15, restTime: 60),
-                PresetExercise(name: "Chest Press", sets: 4, reps: 12, restTime: 90),
-                PresetExercise(name: "Incline Press", sets: 3, reps: 10, restTime: 90),
-                PresetExercise(name: "Chest Fly", sets: 3, reps: 12, restTime: 60)
-            ],
-            duration: 45,
-            difficulty: "Intermediate",
-            xpReward: 180
-        ),
-        PresetWorkout(
-            name: "Dos de Fer",
-            emoji: "🦅",
-            description: "Forgez un dos solide et puissant",
-            exercises: [
-                PresetExercise(name: "Pull-ups", sets: 3, reps: 8, restTime: 90),
-                PresetExercise(name: "Lat Pulldown", sets: 4, reps: 12, restTime: 90),
-                PresetExercise(name: "Rowing", sets: 4, reps: 10, restTime: 75),
-                PresetExercise(name: "Deadlift", sets: 3, reps: 8, restTime: 120)
-            ],
-            duration: 50,
-            difficulty: "Advanced",
-            xpReward: 220
-        ),
-        PresetWorkout(
-            name: "Bras Sculptés",
-            emoji: "🔥",
-            description: "Tonifiez et renforcez vos bras",
-            exercises: [
-                PresetExercise(name: "Bicep Curls", sets: 3, reps: 15, restTime: 60),
-                PresetExercise(name: "Tricep Dips", sets: 3, reps: 12, restTime: 60),
-                PresetExercise(name: "Hammer Curls", sets: 3, reps: 12, restTime: 60),
-                PresetExercise(name: "Overhead Press", sets: 3, reps: 10, restTime: 75)
-            ],
-            duration: 35,
-            difficulty: "Beginner",
-            xpReward: 140
-        ),
-        PresetWorkout(
-            name: "Jambes Titanium",
-            emoji: "🦵",
-            description: "Renforcez le bas de votre corps",
-            exercises: [
-                PresetExercise(name: "Squats", sets: 4, reps: 15, restTime: 90),
-                PresetExercise(name: "Lunges", sets: 3, reps: 12, restTime: 60),
-                PresetExercise(name: "Leg Press", sets: 4, reps: 12, restTime: 90),
-                PresetExercise(name: "Calf Raises", sets: 3, reps: 20, restTime: 45)
-            ],
-            duration: 40,
-            difficulty: "Intermediate",
-            xpReward: 160
-        )
+    let featuredWorkouts = [
+        ("🔥 HIIT Inferno", "20 min", "Beginner", "High intensity interval training"),
+        ("💪 Strength Builder", "45 min", "Intermediate", "Build muscle and power"),
+        ("🧘‍♀️ Mobility Flow", "30 min", "All Levels", "Improve flexibility"),
+        ("🏃‍♂️ Cardio Blast", "35 min", "Intermediate", "Burn calories fast")
     ]
     
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                Text("Découvrez nos entraînements")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.top)
-                
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 15) {
-                    ForEach(presetWorkouts, id: \.name) { workout in
-                        PresetWorkoutCard(workout: workout) {
-                            selectedWorkout = workout
+                // Featured Section
+                VStack(alignment: .leading, spacing: 15) {
+                    Text("⭐ Featured Workouts")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    VStack(spacing: 12) {
+                        ForEach(featuredWorkouts, id: \.0) { workout in
+                            FeaturedWorkoutCard(
+                                title: workout.0,
+                                duration: workout.1,
+                                level: workout.2,
+                                description: workout.3
+                            )
                         }
+                    }
+                }
+                
+                // Categories
+                VStack(alignment: .leading, spacing: 15) {
+                    Text("📂 Categories")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 15) {
+                        CategoryCard(title: "Strength", icon: "dumbbell.fill", color: .red)
+                        CategoryCard(title: "Cardio", icon: "heart.fill", color: .orange)
+                        CategoryCard(title: "Flexibility", icon: "figure.yoga", color: .green)
+                        CategoryCard(title: "HIIT", icon: "flame.fill", color: .purple)
                     }
                 }
                 
@@ -436,98 +439,188 @@ struct DiscoverTrainingView: View {
             }
             .padding()
         }
-        .sheet(item: $selectedWorkout) { workout in
-            PresetWorkoutDetailView(workout: workout)
-        }
     }
 }
 
-// MARK: - Preset Workout Models
-struct PresetWorkout: Identifiable {
-    let id = UUID()
+// MARK: - Workout Card
+struct WorkoutCard: View {
     let name: String
-    let emoji: String
-    let description: String
-    let exercises: [PresetExercise]
-    let duration: Int // minutes
-    let difficulty: String
-    let xpReward: Int
-}
-
-struct PresetExercise {
-    let name: String
-    let sets: Int
-    let reps: Int
-    let restTime: Int // seconds
-}
-
-// MARK: - Preset Workout Card
-struct PresetWorkoutCard: View {
-    let workout: PresetWorkout
-    let onTap: () -> Void
-    
-    var difficultyColor: Color {
-        switch workout.difficulty {
-        case "Beginner": return .green
-        case "Intermediate": return .orange
-        case "Advanced": return .red
-        default: return .blue
-        }
-    }
+    let duration: String
+    let exercises: Int
+    let lastPerformed: String
+    let difficulty: WorkoutDifficulty
     
     var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 15) {
-                // Emoji and Title
-                VStack(spacing: 8) {
-                    Text(workout.emoji)
-                        .font(.system(size: 40))
-                    
-                    Text(workout.name)
+        Button {
+            // Start workout action
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text(name)
                         .font(.headline)
-                        .fontWeight(.bold)
                         .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
+                    
+                    Spacer()
+                    
+                    DifficultyBadge(difficulty: difficulty)
                 }
                 
-                // Info
-                VStack(spacing: 5) {
-                    HStack {
-                        Image(systemName: "clock")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                        Text("\(workout.duration)min")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                    }
+                HStack(spacing: 20) {
+                    Label(duration, systemImage: "clock")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.8))
                     
-                    Text(workout.difficulty)
+                    Label("\(exercises) exercises", systemImage: "list.bullet")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.8))
+                }
+                
+                Text("Last: \(lastPerformed)")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            .padding(16)
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(12)
+        }
+    }
+}
+
+// MARK: - Featured Workout Card
+struct FeaturedWorkoutCard: View {
+    let title: String
+    let duration: String
+    let level: String
+    let description: String
+    
+    var body: some View {
+        Button {
+            // Start featured workout
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
+                    
+                    Spacer()
+                    
+                    Text(level)
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(difficultyColor)
-                    
-                    Text("\(workout.xpReward) XP")
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.blue.opacity(0.8))
+                        .cornerRadius(8)
+                }
+                
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.leading)
+                
+                HStack {
+                    Label(duration, systemImage: "clock")
                         .font(.caption)
-                        .fontWeight(.bold)
+                        .foregroundColor(.white.opacity(0.6))
+                    
+                    Spacer()
+                    
+                    Image(systemName: "play.circle.fill")
+                        .font(.title2)
                         .foregroundColor(.blue)
                 }
             }
             .padding(16)
-            .frame(maxWidth: .infinity)
-            .frame(height: 160)
             .background(Color.white.opacity(0.1))
-            .cornerRadius(16)
-            .shadow(color: difficultyColor.opacity(0.3), radius: 5)
+            .cornerRadius(12)
         }
     }
 }
 
-// MARK: - Preset Workout Detail View
-struct PresetWorkoutDetailView: View {
+// MARK: - Category Card
+struct CategoryCard: View {
+    let title: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        Button {
+            // Browse category
+        } label: {
+            VStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 30))
+                    .foregroundColor(color)
+                
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+            }
+            .frame(height: 80)
+            .frame(maxWidth: .infinity)
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(12)
+        }
+    }
+}
+
+// MARK: - Create Workout View
+struct CreateWorkoutView: View {
     @Environment(\.dismiss) private var dismiss
-    let workout: PresetWorkout
-    @State private var isStarted = false
-    @State private var completedExercises: Set<String> = []
+    @State private var workoutName = ""
+    @State private var selectedMuscleGroup = "Chest"
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    Text("Create Custom Workout")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(.top)
+                    
+                    Text("Design your perfect training session")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Text("Coming Soon!")
+                        .font(.title3)
+                        .foregroundColor(.blue)
+                        .padding(.top, 50)
+                    
+                    Spacer()
+                }
+                .padding()
+            }
+            .navigationTitle("Create Workout")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundColor(.blue)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+// MARK: - Progress Analytics View
+struct SimpleProgressView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedTimeframe = "This Week"
+    
+    let timeframes = ["This Week", "This Month", "Last 3 Months"]
     
     var body: some View {
         NavigationView {
@@ -538,229 +631,155 @@ struct PresetWorkoutDetailView: View {
                     VStack(spacing: 25) {
                         // Header
                         VStack(spacing: 15) {
-                            Text(workout.emoji)
-                                .font(.system(size: 60))
-                            
-                            Text(workout.name)
-                                .font(.title)
+                            Text("Progress Analytics")
+                                .font(.largeTitle)
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
                             
-                            Text(workout.description)
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.8))
-                                .multilineTextAlignment(.center)
+                            Picker("Timeframe", selection: $selectedTimeframe) {
+                                ForEach(timeframes, id: \.self) { timeframe in
+                                    Text(timeframe).tag(timeframe)
+                                }
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .padding(.horizontal)
                         }
-                        .padding(20)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(16)
                         
-                        // Workout Info
-                        HStack(spacing: 30) {
-                            VStack {
-                                Text("\(workout.duration)")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.blue)
-                                Text("Minutes")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            
-                            VStack {
-                                Text("\(workout.exercises.count)")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.purple)
-                                Text("Exercises")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            
-                            VStack {
-                                Text("\(workout.xpReward)")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.green)
-                                Text("XP Reward")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                        }
-                        .padding(20)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(16)
-                        
-                        // Exercises List
+                        // Weekly Overview
                         VStack(alignment: .leading, spacing: 15) {
-                            Text("Exercises")
+                            Text("📈 Weekly Overview")
                                 .font(.title2)
-                                .fontWeight(.semibold)
+                                .fontWeight(.bold)
                                 .foregroundColor(.white)
                             
-                            ForEach(workout.exercises, id: \.name) { exercise in
-                                PresetExerciseRow(
-                                    exercise: exercise,
-                                    isCompleted: completedExercises.contains(exercise.name),
-                                    onToggle: {
-                                        if completedExercises.contains(exercise.name) {
-                                            completedExercises.remove(exercise.name)
-                                        } else {
-                                            completedExercises.insert(exercise.name)
-                                        }
-                                    }
+                            LazyVGrid(columns: [
+                                GridItem(.flexible()),
+                                GridItem(.flexible())
+                            ], spacing: 15) {
+                                StatCard(
+                                    title: "Workouts",
+                                    value: "12",
+                                    subtitle: "This week",
+                                    icon: "dumbbell.fill",
+                                    color: .blue
+                                )
+                                
+                                StatCard(
+                                    title: "Total Time",
+                                    value: "8.5h",
+                                    subtitle: "Training time",
+                                    icon: "clock.fill",
+                                    color: .green
+                                )
+                                
+                                StatCard(
+                                    title: "Calories",
+                                    value: "3,420",
+                                    subtitle: "Burned",
+                                    icon: "flame.fill",
+                                    color: .orange
+                                )
+                                
+                                StatCard(
+                                    title: "PR's",
+                                    value: "5",
+                                    subtitle: "New records",
+                                    icon: "trophy.fill",
+                                    color: .yellow
                                 )
                             }
                         }
-                        .padding(20)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(16)
                         
-                        // Complete Button
-                        Button("Complete Workout (+\(workout.xpReward) XP)") {
-                            // Add workout completion logic
-                            dismiss()
-                        }
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            LinearGradient(
-                                colors: [.green, .blue],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .cornerRadius(12)
-                        .shadow(color: .green.opacity(0.3), radius: 10)
-                        .disabled(completedExercises.count < workout.exercises.count)
-                        
-                        Spacer(minLength: 50)
-                    }
-                    .padding()
-                }
-            }
-            .navigationTitle("Workout Details")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                    .foregroundColor(.red)
-                }
-            }
-        }
-        .preferredColorScheme(.dark)
-    }
-}
-
-// MARK: - Preset Exercise Row
-struct PresetExerciseRow: View {
-    let exercise: PresetExercise
-    let isCompleted: Bool
-    let onToggle: () -> Void
-    
-    var body: some View {
-        HStack {
-            Button(action: onToggle) {
-                Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundColor(isCompleted ? .green : .white.opacity(0.3))
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(exercise.name)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .strikethrough(isCompleted)
-                
-                Text("\(exercise.sets) sets × \(exercise.reps) reps • \(exercise.restTime)s rest")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-            }
-            
-            Spacer()
-        }
-        .padding(12)
-        .background(isCompleted ? Color.green.opacity(0.1) : Color.black.opacity(0.3))
-        .cornerRadius(12)
-    }
-}
-
-// MARK: - Simple Progress View
-struct SimpleProgressView: View {
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 25) {
-                        // Level Progress
-                        VStack(spacing: 15) {
-                            Text("Hunter Progress")
-                                .font(.title)
+                        // Strength Progress
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("💪 Strength Progress")
+                                .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
                             
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text("Level 1")
-                                        .font(.title2)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.blue)
-                                    
-                                    Text("Newbie Hunter")
-                                        .font(.subheadline)
-                                        .foregroundColor(.purple.opacity(0.8))
-                                }
+                            VStack(spacing: 12) {
+                                StrengthProgressCard(
+                                    exercise: "Bench Press",
+                                    current: "185 lbs",
+                                    previous: "175 lbs",
+                                    improvement: "+10 lbs"
+                                )
                                 
-                                Spacer()
+                                StrengthProgressCard(
+                                    exercise: "Deadlift",
+                                    current: "275 lbs",
+                                    previous: "265 lbs",
+                                    improvement: "+10 lbs"
+                                )
                                 
-                                VStack {
-                                    Text("0 / 100 XP")
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.7))
-                                    
-                                    ProgressView(value: 0.0)
-                                        .progressViewStyle(LinearProgressViewStyle(tint: .blue))
-                                        .frame(width: 100)
-                                }
+                                StrengthProgressCard(
+                                    exercise: "Squat",
+                                    current: "225 lbs",
+                                    previous: "220 lbs",
+                                    improvement: "+5 lbs"
+                                )
                             }
                         }
-                        .padding(20)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(16)
                         
-                        // Stats Grid
-                        LazyVGrid(columns: [
-                            GridItem(.flexible()),
-                            GridItem(.flexible())
-                        ], spacing: 15) {
-                            StatCard(title: "Workouts", value: "0", color: .blue)
-                            StatCard(title: "Total XP", value: "0", color: .purple)
-                            StatCard(title: "Streak", value: "0 days", color: .orange)
-                            StatCard(title: "Best Week", value: "0", color: .yellow)
-                        }
-                        
-                        // Coming Soon
-                        VStack(spacing: 10) {
-                            Text("📊 Advanced Analytics")
+                        // Body Composition
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("📏 Body Composition")
                                 .font(.title2)
+                                .fontWeight(.bold)
                                 .foregroundColor(.white)
                             
-                            Text("Detailed charts and progress tracking coming soon!")
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.7))
-                                .multilineTextAlignment(.center)
+                            VStack(spacing: 12) {
+                                BodyMetricCard(
+                                    metric: "Weight",
+                                    current: "172 lbs",
+                                    change: "-2 lbs",
+                                    isPositive: false
+                                )
+                                
+                                BodyMetricCard(
+                                    metric: "Body Fat",
+                                    current: "12.5%",
+                                    change: "-1.2%",
+                                    isPositive: false
+                                )
+                                
+                                BodyMetricCard(
+                                    metric: "Muscle Mass",
+                                    current: "145 lbs",
+                                    change: "+3 lbs",
+                                    isPositive: true
+                                )
+                            }
                         }
-                        .padding(20)
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(16)
+                        
+                        // Weekly Activity Chart Placeholder
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("📊 Activity Chart")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                            
+                            VStack(spacing: 10) {
+                                Text("Weekly Training Volume")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                Text("Chart visualization coming soon")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white.opacity(0.7))
+                                
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.1))
+                                    .frame(height: 200)
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        Text("📈 Interactive Charts\nComing Soon!")
+                                            .font(.headline)
+                                            .foregroundColor(.blue)
+                                            .multilineTextAlignment(.center)
+                                    )
+                            }
+                        }
                         
                         Spacer(minLength: 50)
                     }
@@ -769,7 +788,7 @@ struct SimpleProgressView: View {
             }
             .navigationTitle("Progress")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") {
                         dismiss()
                     }
@@ -781,9 +800,731 @@ struct SimpleProgressView: View {
     }
 }
 
-// MARK: - Simple Quests View
+// MARK: - Quests & Challenges View
 struct SimpleQuestsView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedCategory = "All"
+    
+    let categories = ["All", "Strength", "Cardio", "Consistency", "Habits"]
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 25) {
+                        QuestsHeaderView()
+                        QuestCategoryFilterView(selectedCategory: $selectedCategory, categories: categories)
+                        ActiveQuestsSection()
+                        AvailableQuestsSection()
+                        RecentAchievementsSection()
+                        Spacer(minLength: 50)
+                    }
+                    .padding()
+                }
+            }
+            .navigationTitle("Quests")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundColor(.blue)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+// MARK: - Quest View Components
+struct QuestsHeaderView: View {
+    var body: some View {
+        VStack(spacing: 15) {
+            Text("Quests & Challenges")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            Text("Level up your fitness journey")
+                .font(.title3)
+                .foregroundColor(.indigo.opacity(0.8))
+        }
+        .padding(.top, 10)
+    }
+}
+
+struct QuestCategoryFilterView: View {
+    @Binding var selectedCategory: String
+    let categories: [String]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text("📂 Categories")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(categories, id: \.self) { category in
+                        Button {
+                            selectedCategory = category
+                        } label: {
+                            Text(category)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(selectedCategory == category ? .black : .white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(selectedCategory == category ? Color.indigo : Color.white.opacity(0.2))
+                                .cornerRadius(20)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+}
+
+struct ActiveQuestsSection: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text("🔥 Active Quests")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            VStack(spacing: 15) {
+                QuestCard(
+                    title: "Consistency Streak",
+                    description: "Work out 5 days this week",
+                    progress: 3,
+                    target: 5,
+                    reward: 150,
+                    isCompleted: false
+                )
+                
+                QuestCard(
+                    title: "Strength Challenger",
+                    description: "Increase bench press by 10 lbs",
+                    progress: 7,
+                    target: 10,
+                    reward: 200,
+                    isCompleted: false
+                )
+                
+                QuestCard(
+                    title: "Cardio Explorer",
+                    description: "Complete 120 minutes of cardio",
+                    progress: 85,
+                    target: 120,
+                    reward: 100,
+                    isCompleted: false
+                )
+            }
+        }
+    }
+}
+
+struct AvailableQuestsSection: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text("✨ Available Quests")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            VStack(spacing: 15) {
+                AvailableQuestCard(
+                    title: "Perfect Week",
+                    description: "Complete all planned workouts this week",
+                    reward: "300 XP + Badge",
+                    estimatedTime: "7 days",
+                    difficulty: .hard
+                )
+                
+                AvailableQuestCard(
+                    title: "Morning Warrior",
+                    description: "Complete 3 morning workouts",
+                    reward: "75 XP",
+                    estimatedTime: "1 week",
+                    difficulty: .easy
+                )
+                
+                AvailableQuestCard(
+                    title: "Leg Day Legend",
+                    description: "Complete 4 leg workouts this month",
+                    reward: "200 XP",
+                    estimatedTime: "4 weeks",
+                    difficulty: .normal
+                )
+            }
+        }
+    }
+}
+
+struct RecentAchievementsSection: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text("🏆 Recent Achievements")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            VStack(spacing: 12) {
+                AchievementCard(
+                    title: "First Week Complete",
+                    description: "Completed your first week of training",
+                    dateEarned: "2 days ago",
+                    xpEarned: 100
+                )
+                
+                AchievementCard(
+                    title: "Strength Gains",
+                    description: "Increased total lifting volume by 20%",
+                    dateEarned: "1 week ago",
+                    xpEarned: 150
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Nutrition View
+struct NutritionView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var selectedTab = 0
+    @State private var showAddMealView = false
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Custom Tab Bar
+                    HStack(spacing: 0) {
+                        TabButton(title: "Today", isSelected: selectedTab == 0) {
+                            selectedTab = 0
+                        }
+                        TabButton(title: "History", isSelected: selectedTab == 1) {
+                            selectedTab = 1
+                        }
+                        TabButton(title: "Goals", isSelected: selectedTab == 2) {
+                            selectedTab = 2
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 10)
+                    
+                                         // Content based on selected tab
+                     TabView(selection: $selectedTab) {
+                         TodayNutritionView()
+                             .tag(0)
+                         NutritionHistoryView()
+                             .tag(1)
+                         NutritionGoalsView()
+                             .tag(2)
+                     }
+                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                }
+            }
+            .navigationTitle("Nutrition Hub")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundColor(.blue)
+                }
+                
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showAddMealView = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .foregroundColor(.green)
+                    }
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+        .sheet(isPresented: $showAddMealView) {
+            AddMealView()
+        }
+    }
+}
+
+// MARK: - Add Meal View
+struct AddMealView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var selectedMealType: MealType = .breakfast
+    @State private var showBarcodeScannerView = false
+    @State private var showManualEntryView = false
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                VStack(spacing: 30) {
+                    // Header
+                    VStack(spacing: 10) {
+                        Text("Add Meal")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        
+                        Text("Track your nutrition")
+                            .font(.title3)
+                            .foregroundColor(.green.opacity(0.8))
+                    }
+                    .padding(.top, 20)
+                    
+                    // Meal Type Selector
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text("Meal Type")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: 15) {
+                            ForEach(MealType.allCases, id: \.self) { mealType in
+                                MealTypeCard(
+                                    mealType: mealType,
+                                    isSelected: selectedMealType == mealType
+                                ) {
+                                    selectedMealType = mealType
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Add Options
+                    VStack(spacing: 20) {
+                        Text("How do you want to add food?")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        
+                        VStack(spacing: 15) {
+                            // Barcode Scanner Option
+                            Button {
+                                showBarcodeScannerView = true
+                            } label: {
+                                HStack(spacing: 15) {
+                                    Image(systemName: "barcode.viewfinder")
+                                        .font(.system(size: 30))
+                                        .foregroundColor(.blue)
+                                        .frame(width: 50, height: 50)
+                                        .background(Color.blue.opacity(0.2))
+                                        .cornerRadius(12)
+                                    
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        Text("Scan Barcode")
+                                            .font(.title3)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.white)
+                                        
+                                        Text("Quickly scan product barcode")
+                                            .font(.subheadline)
+                                            .foregroundColor(.white.opacity(0.7))
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.title3)
+                                        .foregroundColor(.blue)
+                                }
+                                .padding(20)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color.blue.opacity(0.1), Color.blue.opacity(0.05)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(16)
+                            }
+                            
+                            // Manual Entry Option
+                            Button {
+                                showManualEntryView = true
+                            } label: {
+                                HStack(spacing: 15) {
+                                    Image(systemName: "square.and.pencil")
+                                        .font(.system(size: 30))
+                                        .foregroundColor(.green)
+                                        .frame(width: 50, height: 50)
+                                        .background(Color.green.opacity(0.2))
+                                        .cornerRadius(12)
+                                    
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        Text("Manual Entry")
+                                            .font(.title3)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.white)
+                                        
+                                        Text("Enter food details manually")
+                                            .font(.subheadline)
+                                            .foregroundColor(.white.opacity(0.7))
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.title3)
+                                        .foregroundColor(.green)
+                                }
+                                .padding(20)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color.green.opacity(0.1), Color.green.opacity(0.05)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(16)
+                            }
+                        }
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+            }
+            .navigationTitle("Add Meal")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundColor(.blue)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+                 .sheet(isPresented: $showBarcodeScannerView) {
+             BarcodeScannerView(selectedMealType: selectedMealType)
+         }
+         .sheet(isPresented: $showManualEntryView) {
+             ManualFoodEntryView(selectedMealType: selectedMealType)
+         }
+    }
+}
+
+// MARK: - Supporting Views
+
+// Meal Type Card
+struct MealTypeCard: View {
+    let mealType: MealType
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 10) {
+                Image(systemName: mealType.icon)
+                    .font(.system(size: 30))
+                    .foregroundColor(isSelected ? .white : Color(hex: mealType.color))
+                
+                Text(mealType.rawValue)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(isSelected ? .white : .white.opacity(0.8))
+            }
+            .frame(height: 80)
+            .frame(maxWidth: .infinity)
+            .background(
+                isSelected ? 
+                Color(hex: mealType.color).opacity(0.8) :
+                Color.white.opacity(0.1)
+            )
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color(hex: mealType.color) : Color.clear, lineWidth: 2)
+            )
+        }
+    }
+}
+
+// Today Nutrition View
+struct TodayNutritionView: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Daily Summary Card
+                VStack(spacing: 15) {
+                    Text("Today's Summary")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    
+                    HStack(spacing: 20) {
+                        NutritionSummaryItem(title: "Calories", value: "0", unit: "kcal", color: .orange)
+                        NutritionSummaryItem(title: "Protein", value: "0", unit: "g", color: .red)
+                        NutritionSummaryItem(title: "Carbs", value: "0", unit: "g", color: .blue)
+                        NutritionSummaryItem(title: "Fat", value: "0", unit: "g", color: .yellow)
+                    }
+                }
+                .padding(20)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(16)
+                
+                // Meals Section
+                VStack(alignment: .leading, spacing: 15) {
+                    Text("Today's Meals")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    
+                    VStack(spacing: 10) {
+                        ForEach(MealType.allCases, id: \.self) { mealType in
+                            MealSectionCard(mealType: mealType)
+                        }
+                    }
+                }
+                
+                Spacer(minLength: 50)
+            }
+            .padding()
+        }
+    }
+}
+
+// Nutrition Summary Item
+struct NutritionSummaryItem: View {
+    let title: String
+    let value: String
+    let unit: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 5) {
+            Text(value)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            Text(unit)
+                .font(.caption2)
+                .foregroundColor(color)
+            
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// Meal Section Card
+struct MealSectionCard: View {
+    let mealType: MealType
+    
+    var body: some View {
+        HStack {
+            Image(systemName: mealType.icon)
+                .font(.title2)
+                .foregroundColor(Color(hex: mealType.color))
+                .frame(width: 40)
+            
+            VStack(alignment: .leading, spacing: 3) {
+                Text(mealType.rawValue)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                Text("No meals added")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            
+            Spacer()
+            
+            Text("0 kcal")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.white.opacity(0.8))
+        }
+        .padding(15)
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(12)
+    }
+}
+
+// Tab Button
+struct TabButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .foregroundColor(isSelected ? .green : .white.opacity(0.6))
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
+                .background(
+                    isSelected ? Color.green.opacity(0.2) : Color.clear
+                )
+                .cornerRadius(8)
+        }
+         }
+}
+
+// MARK: - Missing Nutrition Views
+
+// Nutrition History View
+struct NutritionHistoryView: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                Text("📊 Nutrition History")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                    .padding(.top)
+                
+                Text("Your nutrition history will be displayed here")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                
+                Text("Add meals to see your history!")
+                    .font(.title3)
+                    .foregroundColor(.green)
+                    .padding(.top, 50)
+                
+                Spacer(minLength: 50)
+            }
+            .padding()
+        }
+    }
+}
+
+// Nutrition Goals View
+struct NutritionGoalsView: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                Text("🎯 Nutrition Goals")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                    .padding(.top)
+                
+                Text("Set and track your daily nutrition targets")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                
+                Text("Goals feature coming soon!")
+                    .font(.title3)
+                    .foregroundColor(.green)
+                    .padding(.top, 50)
+                
+                Spacer(minLength: 50)
+            }
+            .padding()
+        }
+    }
+}
+
+// Barcode Scanner View
+struct BarcodeScannerView: View {
+    @Environment(\.dismiss) private var dismiss
+    let selectedMealType: MealType
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    Text("📱 Barcode Scanner")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text("Point your camera at the product barcode")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                    
+                    // Placeholder for camera view
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 300)
+                        .overlay(
+                            VStack(spacing: 15) {
+                                Image(systemName: "camera.viewfinder")
+                                    .font(.system(size: 60))
+                                    .foregroundColor(.blue)
+                                
+                                Text("Camera Preview")
+                                    .font(.headline)
+                                    .foregroundColor(.white.opacity(0.6))
+                                
+                                Text("Barcode scanning requires camera access.\nThis is a demo placeholder.")
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.5))
+                                    .multilineTextAlignment(.center)
+                            }
+                        )
+                    
+                    Button("Simulate Scan Result") {
+                        // For demo purposes - would normally process scanned barcode
+                        dismiss()
+                    }
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                    
+                    Spacer()
+                }
+                .padding()
+            }
+            .navigationTitle("Scan Barcode")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundColor(.blue)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+// Manual Food Entry View
+struct ManualFoodEntryView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    let selectedMealType: MealType
+    
+    @State private var foodName = ""
+    @State private var brandName = ""
+    @State private var servingSize = "100"
+    @State private var quantity = "1"
+    @State private var calories = ""
+    @State private var protein = ""
+    @State private var carbs = ""
+    @State private var fat = ""
     
     var body: some View {
         NavigationView {
@@ -792,135 +1533,193 @@ struct SimpleQuestsView: View {
                 
                 ScrollView {
                     VStack(spacing: 20) {
-                        Text("🎯 Daily Quests")
-                            .font(.title)
+                        Text("Add Food Manually")
+                            .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                             .padding(.top)
                         
-                        // Daily Quests
                         VStack(spacing: 15) {
-                            QuestCardSimple(
-                                title: "First Training",
-                                description: "Complete your first workout",
-                                reward: "50 XP",
-                                isCompleted: false
-                            )
+                            // Basic Info
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Basic Information")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                CustomTextField(title: "Food Name*", text: $foodName, placeholder: "e.g., Greek Yogurt")
+                                CustomTextField(title: "Brand (Optional)", text: $brandName, placeholder: "e.g., Chobani")
+                            }
                             
-                            QuestCardSimple(
-                                title: "Consistency Builder",
-                                description: "Train 3 times this week",
-                                reward: "100 XP",
-                                isCompleted: false
-                            )
+                            // Serving Info
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Serving Information")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                HStack(spacing: 15) {
+                                    CustomTextField(title: "Serving Size (g)", text: $servingSize, placeholder: "100")
+                                    CustomTextField(title: "Quantity", text: $quantity, placeholder: "1")
+                                }
+                            }
                             
-                            QuestCardSimple(
-                                title: "Volume Master",
-                                description: "Complete 50 total reps",
-                                reward: "75 XP",
-                                isCompleted: false
-                            )
+                            // Nutrition Info
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Nutrition per Serving")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                VStack(spacing: 12) {
+                                    CustomTextField(title: "Calories", text: $calories, placeholder: "150")
+                                    CustomTextField(title: "Protein (g)", text: $protein, placeholder: "10")
+                                    CustomTextField(title: "Carbs (g)", text: $carbs, placeholder: "15")
+                                    CustomTextField(title: "Fat (g)", text: $fat, placeholder: "8")
+                                }
+                            }
                         }
-                        
-                        Text("🏆 Weekly Challenges")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .padding(.top)
-                        
-                        VStack(spacing: 15) {
-                            QuestCardSimple(
-                                title: "Weekly Warrior",
-                                description: "Complete 5 workouts this week",
-                                reward: "250 XP",
-                                isCompleted: false
-                            )
-                            
-                            QuestCardSimple(
-                                title: "Strength Builder",
-                                description: "Lift 1000kg total this week",
-                                reward: "300 XP",
-                                isCompleted: false
-                            )
-                        }
-                        
-                        Spacer(minLength: 50)
+                        .padding(.bottom, 30)
                     }
                     .padding()
                 }
             }
-            .navigationTitle("Quests")
+            .navigationTitle("Manual Entry")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
                         dismiss()
                     }
                     .foregroundColor(.blue)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveFoodItem()
+                        dismiss()
+                    }
+                    .foregroundColor(.green)
+                    .disabled(foodName.isEmpty || calories.isEmpty)
                 }
             }
         }
         .preferredColorScheme(.dark)
     }
+    
+    private func saveFoodItem() {
+        let foodItem = FoodItem(
+            name: foodName,
+            brand: brandName.isEmpty ? nil : brandName,
+            servingSize: Double(servingSize) ?? 100.0,
+            quantity: Double(quantity) ?? 1.0,
+            caloriesPerServing: Int(calories) ?? 0,
+            proteinPerServing: Double(protein) ?? 0.0,
+            carbsPerServing: Double(carbs) ?? 0.0,
+            fatPerServing: Double(fat) ?? 0.0,
+            isManualEntry: true
+        )
+        
+        let meal = Meal(name: selectedMealType.rawValue, mealType: selectedMealType)
+        meal.foodItems.append(foodItem)
+        meal.calculateTotals()
+        
+        modelContext.insert(meal)
+        modelContext.insert(foodItem)
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error saving meal: \(error)")
+        }
+    }
 }
 
-// MARK: - Simple Stat Card
+// Custom Text Field
+struct CustomTextField: View {
+    let title: String
+    @Binding var text: String
+    let placeholder: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.8))
+            
+            TextField(placeholder, text: $text)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(8)
+        }
+    }
+}
+
+// MARK: - Supporting Views for Progress
+
+// Stat Card
 struct StatCard: View {
     let title: String
     let value: String
+    let subtitle: String
+    let icon: String
     let color: Color
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 24))
+                .foregroundColor(color)
+            
             Text(value)
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
             
             Text(title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.white)
+            
+            Text(subtitle)
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.7))
         }
-        .padding(16)
         .frame(maxWidth: .infinity)
-        .background(color.opacity(0.1))
-        .cornerRadius(12)
+        .padding(16)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(16)
     }
 }
 
-// MARK: - Simple Quest Card
-struct QuestCardSimple: View {
-    let title: String
-    let description: String
-    let reward: String
-    let isCompleted: Bool
+// Strength Progress Card
+struct StrengthProgressCard: View {
+    let exercise: String
+    let current: String
+    let previous: String
+    let improvement: String
     
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 5) {
-                Text(title)
+                Text(exercise)
                     .font(.headline)
                     .foregroundColor(.white)
                 
-                Text(description)
-                    .font(.subheadline)
+                Text("Previous: \(previous)")
+                    .font(.caption)
                     .foregroundColor(.white.opacity(0.7))
             }
             
             Spacer()
             
             VStack(alignment: .trailing, spacing: 5) {
-                Text(reward)
+                Text(current)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Text(improvement)
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundColor(.blue)
-                
-                if isCompleted {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                } else {
-                    Image(systemName: "circle")
-                        .foregroundColor(.white.opacity(0.3))
-                }
+                    .foregroundColor(.green)
             }
         }
         .padding(16)
@@ -929,6 +1728,189 @@ struct QuestCardSimple: View {
     }
 }
 
+// Body Metric Card
+struct BodyMetricCard: View {
+    let metric: String
+    let current: String
+    let change: String
+    let isPositive: Bool
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(metric)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                Text("Current")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 5) {
+                Text(current)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Text(change)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(isPositive ? .green : .red)
+            }
+        }
+        .padding(16)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Supporting Views for Quests
+
+// Difficulty Badge
+struct DifficultyBadge: View {
+    let difficulty: WorkoutDifficulty
+    
+    var difficultyColor: Color {
+        switch difficulty {
+        case .easy:
+            return .green
+        case .normal:
+            return .blue
+        case .hard:
+            return .orange
+        case .nightmare:
+            return .red
+        }
+    }
+    
+    var body: some View {
+        Text(difficulty.rawValue)
+            .font(.caption)
+            .fontWeight(.semibold)
+            .foregroundColor(.white)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(difficultyColor.opacity(0.8))
+            .cornerRadius(8)
+    }
+}
+
+// Available Quest Card
+struct AvailableQuestCard: View {
+    let title: String
+    let description: String
+    let reward: String
+    let estimatedTime: String
+    let difficulty: WorkoutDifficulty
+    
+    var body: some View {
+        Button {
+            // Accept quest action
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
+                    
+                    Spacer()
+                    
+                    DifficultyBadge(difficulty: difficulty)
+                }
+                
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.leading)
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Reward: \(reward)")
+                            .font(.caption)
+                            .foregroundColor(.yellow)
+                            .fontWeight(.semibold)
+                        
+                        Text("Time: \(estimatedTime)")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    
+                    Spacer()
+                    
+                    Text("Accept")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.indigo)
+                        .cornerRadius(20)
+                }
+            }
+            .padding(16)
+            .background(Color.white.opacity(0.05))
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.indigo.opacity(0.3), lineWidth: 1)
+            )
+        }
+    }
+}
+
+// Achievement Card
+struct AchievementCard: View {
+    let title: String
+    let description: String
+    let dateEarned: String
+    let xpEarned: Int
+    
+    var body: some View {
+        HStack(spacing: 15) {
+            Image(systemName: "trophy.fill")
+                .font(.system(size: 30))
+                .foregroundColor(.yellow)
+                .frame(width: 50, height: 50)
+                .background(Color.yellow.opacity(0.2))
+                .cornerRadius(12)
+            
+            VStack(alignment: .leading, spacing: 5) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.8))
+                
+                HStack {
+                    Text(dateEarned)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
+                    
+                    Spacer()
+                    
+                    Text("+\(xpEarned) XP")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.yellow)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(16)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+
+
 #Preview {
     ContentView()
-}
+} 

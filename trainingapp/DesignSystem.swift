@@ -154,37 +154,7 @@ struct XPProgressBar: View {
     }
 }
 
-// MARK: - Difficulty Badge
-struct DifficultyBadge: View {
-    let difficulty: WorkoutDifficulty
-    
-    var body: some View {
-        Text(difficulty.rawValue)
-            .font(.captionFont)
-            .foregroundColor(.textPrimary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color(hex: difficulty.color).opacity(0.8))
-            .cornerRadius(8)
-            .shadowGlow(color: Color(hex: difficulty.color), radius: 3)
-    }
-}
 
-// MARK: - Rarity Badge
-struct RarityBadge: View {
-    let rarity: AchievementRarity
-    
-    var body: some View {
-        Text(rarity.rawValue)
-            .font(.captionFont)
-            .foregroundColor(.textPrimary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(Color(hex: rarity.color).opacity(0.8))
-            .cornerRadius(6)
-            .shadowGlow(color: Color(hex: rarity.color), radius: 2)
-    }
-}
 
 // MARK: - Level Up Animation View
 struct LevelUpView: View {

@@ -196,7 +196,129 @@ final class Quest {
     }
 }
 
+// MARK: - Meal (Nutrition Tracking)
+@Model
+final class Meal {
+    var name: String
+    var date: Date
+    var mealType: MealType
+    var foodItems: [FoodItem]
+    var totalCalories: Int
+    var totalProtein: Double
+    var totalCarbs: Double
+    var totalFat: Double
+    var notes: String
+    
+    init(name: String = "Meal", date: Date = Date(), mealType: MealType = .breakfast) {
+        self.name = name
+        self.date = date
+        self.mealType = mealType
+        self.foodItems = []
+        self.totalCalories = 0
+        self.totalProtein = 0.0
+        self.totalCarbs = 0.0
+        self.totalFat = 0.0
+        self.notes = ""
+    }
+    
+    func calculateTotals() {
+        totalCalories = foodItems.reduce(0) { $0 + $1.totalCalories }
+        totalProtein = foodItems.reduce(0) { $0 + $1.totalProtein }
+        totalCarbs = foodItems.reduce(0) { $0 + $1.totalCarbs }
+        totalFat = foodItems.reduce(0) { $0 + $1.totalFat }
+    }
+}
+
+// MARK: - Food Item (Individual food/product)
+@Model
+final class FoodItem {
+    var name: String
+    var brand: String?
+    var barcode: String?
+    var servingSize: Double // in grams
+    var quantity: Double // multiplier for serving size
+    var caloriesPerServing: Int
+    var proteinPerServing: Double
+    var carbsPerServing: Double
+    var fatPerServing: Double
+    var isManualEntry: Bool
+    var dateAdded: Date
+    
+    init(name: String, brand: String? = nil, barcode: String? = nil, servingSize: Double = 100.0, quantity: Double = 1.0, caloriesPerServing: Int = 0, proteinPerServing: Double = 0.0, carbsPerServing: Double = 0.0, fatPerServing: Double = 0.0, isManualEntry: Bool = true) {
+        self.name = name
+        self.brand = brand
+        self.barcode = barcode
+        self.servingSize = servingSize
+        self.quantity = quantity
+        self.caloriesPerServing = caloriesPerServing
+        self.proteinPerServing = proteinPerServing
+        self.carbsPerServing = carbsPerServing
+        self.fatPerServing = fatPerServing
+        self.isManualEntry = isManualEntry
+        self.dateAdded = Date()
+    }
+    
+    var totalCalories: Int {
+        return Int(Double(caloriesPerServing) * quantity)
+    }
+    
+    var totalProtein: Double {
+        return proteinPerServing * quantity
+    }
+    
+    var totalCarbs: Double {
+        return carbsPerServing * quantity
+    }
+    
+    var totalFat: Double {
+        return fatPerServing * quantity
+    }
+    
+    var displayName: String {
+        if let brand = brand {
+            return "\(brand) - \(name)"
+        }
+        return name
+    }
+}
+
+// MARK: - Nutrition Goals (Daily targets)
+@Model
+final class NutritionGoals {
+    var dailyCaloriesGoal: Int
+    var dailyProteinGoal: Double
+    var dailyCarbsGoal: Double
+    var dailyFatGoal: Double
+    var waterGoal: Double // in liters
+    var createdAt: Date
+    var updatedAt: Date
+    
+    init(dailyCaloriesGoal: Int = 2000, dailyProteinGoal: Double = 150.0, dailyCarbsGoal: Double = 200.0, dailyFatGoal: Double = 65.0, waterGoal: Double = 2.5) {
+        self.dailyCaloriesGoal = dailyCaloriesGoal
+        self.dailyProteinGoal = dailyProteinGoal
+        self.dailyCarbsGoal = dailyCarbsGoal
+        self.dailyFatGoal = dailyFatGoal
+        self.waterGoal = waterGoal
+        self.createdAt = Date()
+        self.updatedAt = Date()
+    }
+    
+    func updateGoals(calories: Int, protein: Double, carbs: Double, fat: Double, water: Double) {
+        self.dailyCaloriesGoal = calories
+        self.dailyProteinGoal = protein
+        self.dailyCarbsGoal = carbs
+        self.dailyFatGoal = fat
+        self.waterGoal = water
+        self.updatedAt = Date()
+    }
+}
+
 // MARK: - Enums
+enum HistoryPeriod: String, CaseIterable, Codable {
+    case week = "Week"
+    case month = "Month"
+    case year = "Year"
+}
 enum WorkoutDifficulty: String, CaseIterable, Codable {
     case easy = "Easy"
     case normal = "Normal"
@@ -267,4 +389,29 @@ enum QuestType: String, CaseIterable, Codable {
     case weekly = "Weekly"
     case monthly = "Monthly"
     case special = "Special"
+}
+
+enum MealType: String, CaseIterable, Codable {
+    case breakfast = "Breakfast"
+    case lunch = "Lunch"
+    case dinner = "Dinner"
+    case snack = "Snack"
+    
+    var icon: String {
+        switch self {
+        case .breakfast: return "sunrise.fill"
+        case .lunch: return "sun.max.fill"
+        case .dinner: return "moon.fill"
+        case .snack: return "leaf.fill"
+        }
+    }
+    
+    var color: String {
+        switch self {
+        case .breakfast: return "#F59E0B"
+        case .lunch: return "#10B981"
+        case .dinner: return "#6366F1"
+        case .snack: return "#8B5CF6"
+        }
+    }
 }

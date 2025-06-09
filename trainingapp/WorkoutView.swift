@@ -96,8 +96,9 @@ struct WorkoutView: View {
         let duration = Date().timeIntervalSince(startTime)
         let totalXP = calculateXP()
         
-        // Ici on créerait un objet Workout et on l'enregistrerait
-        // Pour l'instant, on ferme juste la vue
+        // TODO: Create and save workout object with duration and totalXP
+        print("Workout saved: Duration: \(duration)s, XP: \(totalXP)")
+        
         dismiss()
     }
     
