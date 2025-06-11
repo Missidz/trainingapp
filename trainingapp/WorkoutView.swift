@@ -1,26 +1,35 @@
 //
-//  WorkoutView.swift
+//  WorkoutView.swift - Interface d'Entraînement Principale
 //  trainingapp
 //
 //  Created by Missi Cherifi on 08/06/2025.
+//
+//  Ce fichier contient:
+//  - Interface principale de création/édition d'entraînements
+//  - Gestion du timing et des exercices en temps réel
+//  - Calcul adaptatif de l'XP basé sur volume, durée, intensité et difficulté
+//  - Prévisualisation XP pendant l'entraînement
+//  - Sauvegarde dans SwiftData avec persistance
 //
 
 import SwiftUI
 import SwiftData
 
+/// Vue principale d'entraînement avec gestion en temps réel
+/// Permet de créer, modifier et sauvegarder des séances avec calcul XP adaptatif
 struct WorkoutView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext  // Contexte SwiftData
+    @Environment(\.dismiss) private var dismiss            // Pour fermer la vue
     
-    @State private var workoutName = ""
-    @State private var selectedDifficulty = "Normal"
-    @State private var exercises = [ExerciseRow]()
-    @State private var notes = ""
-    @State private var isAwakening = false
-    @State private var workoutStarted = false
-    @State private var startTime = Date()
+    @State private var workoutName = ""                    // Nom de la séance
+    @State private var selectedDifficulty = "Normal"      // Difficulté sélectionnée
+    @State private var exercises = [ExerciseRow]()         // Liste des exercices
+    @State private var notes = ""                          // Notes personnelles
+    @State private var isAwakening = false                 // Mode "Éveil" (+40% XP)
+    @State private var workoutStarted = false              // État de l'entraînement
+    @State private var startTime = Date()                  // Heure de début
     
-    let difficulties = ["Easy", "Normal", "Hard", "Nightmare"]
+    let difficulties = ["Easy", "Normal", "Hard", "Nightmare"]  // Options de difficulté
     
     var body: some View {
         NavigationView {
@@ -92,19 +101,23 @@ struct WorkoutView: View {
         .preferredColorScheme(.dark)
     }
     
+    /// Démarre l'entraînement et commence le chronométrage
     private func startWorkout() {
         workoutStarted = true
         startTime = Date()
     }
     
+    /// Arrête l'entraînement (pause le chronométrage)
     private func stopWorkout() {
         workoutStarted = false
     }
     
+    /// Sauvegarde l'entraînement dans SwiftData avec tous les exercices et XP
+    /// Calcule l'XP total et crée les objets Exercise associés
     private func saveWorkout() {
-        // Créer l'objet Workout
-        let duration = Date().timeIntervalSince(startTime)
-        let totalXP = calculateXP()
+        // Créer l'objet Workout principal
+        let duration = Date().timeIntervalSince(startTime)  // Durée totale
+        let totalXP = calculateXP()                         // XP calculé avec algorithme adaptatif
         
         let workout = Workout(
             name: workoutName.isEmpty ? "Training Session" : workoutName,

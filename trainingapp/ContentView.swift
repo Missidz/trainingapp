@@ -1,22 +1,30 @@
 //
-//  ContentView.swift
+//  ContentView.swift - Interface Principale de l'Application
 //  trainingapp
 //
 //  Created by Missi Cherifi on 08/06/2025.
+//
+//  Ce fichier contient l'interface principale avec:
+//  - TabView animé avec 5 onglets (Home, Training, Nutrition, Progress, Quests)
+//  - Navigation entre les différentes sections
+//  - Gestion du thème sombre Shadow Gym
+//  - Initialisation automatique du profil utilisateur
 //
 
 import SwiftUI
 import SwiftData
 import Foundation
 
+/// Vue principale de l'application avec navigation par onglets
+/// Gère l'initialisation du profil utilisateur et la navigation globale
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @State private var selectedTab = 0
-    @State private var previousTab = 0
+    @Environment(\.modelContext) private var modelContext  // Contexte SwiftData pour la persistance
+    @State private var selectedTab = 0                     // Onglet actuellement sélectionné
+    @State private var previousTab = 0                     // Onglet précédent (pour animations)
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Onglet Home
+            // Onglet Home - Tableau de bord principal avec profil et stats
             HomeView()
                 .tabItem {
                     Image(systemName: selectedTab == 0 ? "house.fill" : "house")
@@ -24,7 +32,7 @@ struct ContentView: View {
                 }
                 .tag(0)
             
-            // Onglet Training
+            // Onglet Training - Interface d'entraînement et historique
             TrainingTabView()
                 .tabItem {
                     Image(systemName: selectedTab == 1 ? "dumbbell.fill" : "dumbbell")
@@ -32,7 +40,7 @@ struct ContentView: View {
                 }
                 .tag(1)
             
-            // Onglet Nutrition
+            // Onglet Nutrition - Tracking des repas et calories
             NutritionTabView()
                 .tabItem {
                     Image(systemName: selectedTab == 2 ? "fork.knife.circle.fill" : "fork.knife.circle")
@@ -40,7 +48,7 @@ struct ContentView: View {
                 }
                 .tag(2)
             
-            // Onglet Progress
+            // Onglet Progress - Progression et statistiques détaillées
             ProgressDashboard()
                 .tabItem {
                     Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis.circle.fill" : "chart.line.uptrend.xyaxis.circle")
@@ -48,7 +56,7 @@ struct ContentView: View {
                 }
                 .tag(3)
             
-            // Onglet Quests
+            // Onglet Quests - Système de quêtes et récompenses
             QuestsDashboard()
                 .tabItem {
                     Image(systemName: selectedTab == 4 ? "target.circle.fill" : "target.circle")
@@ -56,9 +64,10 @@ struct ContentView: View {
                 }
                 .tag(4)
         }
-        .preferredColorScheme(.dark)
-        .accentColor(.blue)
+        .preferredColorScheme(.dark)        // Force le thème sombre Shadow Gym
+        .accentColor(.blue)                  // Couleur d'accent bleue
         .onChange(of: selectedTab) { oldValue, newValue in
+            // Animation fluide lors du changement d'onglet
             withAnimation(.easeInOut(duration: 0.3)) {
                 previousTab = oldValue
             }
@@ -67,36 +76,38 @@ struct ContentView: View {
 }
 
 // MARK: - Home View
+/// Vue d'accueil principale avec branding et informations utilisateur
+/// Affiche le profil utilisateur et les statistiques de base
 struct HomeView: View {
     var body: some View {
             ZStack {
-                // Fond sombre inspiré Solo Leveling
+                // Fond sombre inspiré Solo Leveling pour l'immersion
                 Color.black
                     .ignoresSafeArea()
                 
                 VStack(spacing: 30) {
-                    // Header principal
+                    // Header principal avec branding Shadow Gym
                     VStack(spacing: 10) {
                         Text("SHADOW GYM")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
-                            .shadow(color: .blue.opacity(0.5), radius: 10)
+                            .shadow(color: .blue.opacity(0.5), radius: 10)  // Effet lumineux
                         
                         Text("Level Up Your Body")
                             .font(.title2)
-                            .foregroundColor(.purple.opacity(0.8))
+                            .foregroundColor(.purple.opacity(0.8))          // Sous-titre violet
                     }
                 .padding(.top, 20)
                     
-                    // Profil utilisateur
+                    // Profil utilisateur avec niveau et XP
                     UserProfileCard()
                     .transition(.asymmetric(
                         insertion: .move(edge: .top).combined(with: .opacity),
                         removal: .move(edge: .bottom).combined(with: .opacity)
                     ))
                 
-                // Statistiques rapides
+                // Statistiques rapides d'entraînement
                 QuickStatsView()
                     .transition(.asymmetric(
                         insertion: .move(edge: .bottom).combined(with: .opacity),

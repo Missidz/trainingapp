@@ -1,26 +1,38 @@
 //
-//  trainingappApp.swift
+//  trainingappApp.swift - Configuration Principale de l'Application
 //  trainingapp
 //
 //  Created by Missi Cherifi on 08/06/2025.
+//
+//  Ce fichier contient:
+//  - Configuration SwiftData avec tous les modèles
+//  - Gestion d'erreurs et récupération automatique de base de données
+//  - Garantit la persistance des données entre les sessions
+//  - Point d'entrée principal de l'application Shadow Gym
 //
 
 import SwiftUI
 import SwiftData
 
 @main
+/// Point d'entrée principal de l'application Shadow Gym
+/// Configure SwiftData avec gestion d'erreurs robuste et récupération automatique
 struct trainingappApp: App {
+    /// Container SwiftData partagé avec tous les modèles de données
+    /// Utilise la persistance avec fallback automatique en cas d'erreur
     var sharedModelContainer: ModelContainer = {
+        // Définition du schéma avec tous les modèles de l'application
         let schema = Schema([
-            User.self,
-            Workout.self,
-            Exercise.self,
-            Achievement.self,
-            Quest.self,
-            Meal.self,
-            FoodItem.self,
-            NutritionGoals.self
+            User.self,          // Profil utilisateur avec niveaux et XP
+            Workout.self,       // Séances d'entraînement
+            Exercise.self,      // Exercices individuels
+            Achievement.self,   // Système d'achievements
+            Quest.self,         // Quêtes quotidiennes/hebdomadaires
+            Meal.self,          // Repas pour nutrition
+            FoodItem.self,      // Aliments individuels
+            NutritionGoals.self // Objectifs nutritionnels
         ])
+        // Configuration persistante (données sauvegardées sur disque)
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
@@ -29,6 +41,7 @@ struct trainingappApp: App {
             print("⚠️ Erreur SwiftData détectée: \(error)")
             print("🔄 Tentative de résolution automatique...")
             
+            // Système de récupération automatique en cas d'erreur de migration
             // Étape 1: Essayer de supprimer les anciens fichiers et recréer la DB
             do {
                 // Supprimer l'ancienne base de données

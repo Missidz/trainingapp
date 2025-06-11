@@ -1,17 +1,26 @@
 //
-//  ProgressViews.swift
+//  ProgressViews.swift - Système de Progression et Quêtes
 //  trainingapp
 //
 //  Created by Missi Cherifi on 08/06/2025.
+//
+//  Ce fichier contient:
+//  - Dashboard de progression avec niveau et XP
+//  - Système de quêtes quotidiennes et hebdomadaires
+//  - Statistiques détaillées et graphiques
+//  - Gestion des récompenses et achievements
+//  - Interface de progression utilisateur
 //
 
 import SwiftUI
 import SwiftData
 import Charts
 
+/// Dashboard principal de progression avec niveau, statistiques et graphiques
+/// Interface centralisée pour visualiser l'évolution du joueur
 struct ProgressDashboard: View {
-    @State private var selectedTimeframe = "Week"
-    let timeframes = ["Week", "Month", "Year"]
+    @State private var selectedTimeframe = "Week"          // Période sélectionnée pour les graphiques
+    let timeframes = ["Week", "Month", "Year"]             // Options de période
     
     var body: some View {
         NavigationView {
@@ -446,13 +455,15 @@ struct AchievementsPreview: View {
     }
 }
 
-// MARK: - Quests View
+// MARK: - Quests Dashboard
+/// Interface principale du système de quêtes avec onglets Daily/Weekly/Achievements
+/// Gère la création automatique des quêtes, le tracking de progression et les récompenses
 struct QuestsDashboard: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var quests: [Quest]
-    @Query private var workouts: [Workout]
-    @State private var selectedTab = 0
-    @State private var showResetConfirmation = false
+    @Environment(\.modelContext) private var modelContext  // Contexte SwiftData
+    @Query private var quests: [Quest]                     // Toutes les quêtes
+    @Query private var workouts: [Workout]                 // Workouts pour calculer progression
+    @State private var selectedTab = 0                     // Onglet sélectionné (Daily/Weekly/Achievements)
+    @State private var showResetConfirmation = false       // Confirmation de reset (debug)
     
     var body: some View {
         NavigationView {
@@ -520,21 +531,25 @@ struct QuestsDashboard: View {
         }
     }
     
+    /// Initialise les quêtes par défaut si aucune n'existe
+    /// Appelée automatiquement au premier lancement
     private func initializeQuestsIfNeeded() {
         if quests.isEmpty {
             createDefaultQuests()
         }
     }
     
+    /// Crée les quêtes par défaut (daily et weekly)
+    /// Système avec 3 quêtes quotidiennes et 3 hebdomadaires
     private func createDefaultQuests() {
-        // Quêtes journalières
+        // Quêtes journalières (se renouvellent chaque jour)
         let dailyQuests = [
             Quest(title: "Premier Entraînement", description: "Complétez votre première séance", targetValue: 1, experienceReward: 50, questType: .daily),
             Quest(title: "Volume Builder", description: "Complétez 50 répétitions au total", targetValue: 50, experienceReward: 75, questType: .daily),
             Quest(title: "Endurance", description: "Entraînez-vous pendant 30 minutes", targetValue: 30, experienceReward: 60, questType: .daily)
         ]
         
-        // Quêtes hebdomadaires
+        // Quêtes hebdomadaires (plus difficiles, plus de récompenses)
         let weeklyQuests = [
             Quest(title: "Guerrier Hebdomadaire", description: "Complétez 5 entraînements cette semaine", targetValue: 5, experienceReward: 250, questType: .weekly),
             Quest(title: "Constructeur de Force", description: "Soulevez un total de 1000kg cette semaine", targetValue: 1000, experienceReward: 300, questType: .weekly),
