@@ -11,13 +11,64 @@ import Foundation
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var showWorkoutView = false
-    @State private var showProgressView = false
-    @State private var showQuestsView = false
-    @State private var showNutritionView = false
+    @State private var selectedTab = 0
+    @State private var previousTab = 0
     
     var body: some View {
-        NavigationView {
+        TabView(selection: $selectedTab) {
+            // Onglet Home
+            HomeView()
+                .tabItem {
+                    Image(systemName: selectedTab == 0 ? "house.fill" : "house")
+                    Text("Home")
+                }
+                .tag(0)
+            
+            // Onglet Training
+            TrainingTabView()
+                .tabItem {
+                    Image(systemName: selectedTab == 1 ? "dumbbell.fill" : "dumbbell")
+                    Text("Training")
+                }
+                .tag(1)
+            
+            // Onglet Nutrition
+            NutritionTabView()
+                .tabItem {
+                    Image(systemName: selectedTab == 2 ? "fork.knife.circle.fill" : "fork.knife.circle")
+                    Text("Nutrition")
+                }
+                .tag(2)
+            
+            // Onglet Progress
+            ProgressDashboard()
+                .tabItem {
+                    Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis.circle.fill" : "chart.line.uptrend.xyaxis.circle")
+                    Text("Progress")
+                }
+                .tag(3)
+            
+            // Onglet Quests
+            QuestsDashboard()
+                .tabItem {
+                    Image(systemName: selectedTab == 4 ? "target.circle.fill" : "target.circle")
+                    Text("Quests")
+                }
+                .tag(4)
+        }
+        .preferredColorScheme(.dark)
+        .accentColor(.blue)
+        .onChange(of: selectedTab) { oldValue, newValue in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                previousTab = oldValue
+            }
+        }
+    }
+}
+
+// MARK: - Home View
+struct HomeView: View {
+    var body: some View {
             ZStack {
                 // Fond sombre inspiré Solo Leveling
                 Color.black
@@ -36,127 +87,201 @@ struct ContentView: View {
                             .font(.title2)
                             .foregroundColor(.purple.opacity(0.8))
                     }
-                    .padding(.top, 50)
+                .padding(.top, 20)
                     
                     // Profil utilisateur
                     UserProfileCard()
-                    
-                    // Navigation principale
-                    VStack(spacing: 20) {
-                        NavigationButton(
-                            title: "Start Training",
-                            subtitle: "Begin your workout",
-                            icon: "dumbbell.fill",
-                            color: .blue,
-                            action: { showWorkoutView = true }
-                        )
-                        
-                        NavigationButton(
-                            title: "View Progress",
-                            subtitle: "Track your journey",
-                            icon: "chart.line.uptrend.xyaxis",
-                            color: .purple,
-                            action: { showProgressView = true }
-                        )
-                        
-                        NavigationButton(
-                            title: "Quests & Goals",
-                            subtitle: "Complete challenges",
-                            icon: "target",
-                            color: .indigo,
-                            action: { showQuestsView = true }
-                        )
-                        
-                        NavigationButton(
-                            title: "Nutrition Hub",
-                            subtitle: "Track your meals",
-                            icon: "fork.knife",
-                            color: .green,
-                            action: { showNutritionView = true }
-                        )
-                    }
-                    
-                    Spacer()
-                }
-                .padding()
-            }
-            .navigationBarBackButtonHidden(true)
-        }
-        .preferredColorScheme(.dark)
-        .sheet(isPresented: $showWorkoutView) {
-            SimpleWorkoutView()
-        }
-        .sheet(isPresented: $showProgressView) {
-            SimpleProgressView()
-        }
-        .sheet(isPresented: $showQuestsView) {
-            SimpleQuestsView()
-        }
-        .sheet(isPresented: $showNutritionView) {
-            NutritionView()
-        }
-    }
-}
-
-// MARK: - User Profile Card
-struct UserProfileCard: View {
-    var body: some View {
-        VStack(spacing: 15) {
-            // Avatar et niveau
-            HStack {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 60))
-                    .foregroundColor(.blue)
-                    .shadow(color: .blue.opacity(0.3), radius: 10)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .move(edge: .bottom).combined(with: .opacity)
+                    ))
                 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Hunter")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    
-                    Text("Newbie Hunter")
-                        .font(.subheadline)
-                        .foregroundColor(.purple.opacity(0.8))
-                    
-                    Text("Level 1")
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(.blue)
-                }
+                // Statistiques rapides
+                QuickStatsView()
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .move(edge: .top).combined(with: .opacity)
+                    ))
                 
                 Spacer()
             }
-            
-            // Barre de progression XP
-            VStack(alignment: .leading, spacing: 5) {
-                HStack {
-                    Text("Experience")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.8))
+            .padding()
+        }
+        .animation(.easeInOut(duration: 0.5), value: UUID())
+    }
+}
+
+// MARK: - Training Tab View
+struct TrainingTabView: View {
+    @State private var selectedTrainingTab = 0
+    @State private var showWorkoutView = false
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Header
+                    VStack(spacing: 15) {
+                        Text("Training Hub")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.top, 20)
+                        
+                        Text("Entraînez-vous comme un Hunter")
+                            .font(.title3)
+                            .foregroundColor(.blue.opacity(0.8))
+                    }
+                    .padding(.bottom, 30)
+                    
+                    // Quick Start Button
+                    Button {
+                        showWorkoutView = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "play.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.green)
+                            
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Démarrer l'entraînement")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                Text("Commencer une nouvelle session")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.green)
+                        }
+                        .padding(20)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.green.opacity(0.2), Color.green.opacity(0.1)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(16)
+                        .shadow(color: .green.opacity(0.3), radius: 10)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 30)
+                    
+                    // Training Stats
+                    TrainingStatsView()
+                        .padding(.horizontal)
+                    
+                    // Recent Workouts Section
+                    RecentWorkoutsView()
+                        .padding(.horizontal)
                     
                     Spacer()
-                    
-                    Text("0 / 100 XP")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.6))
                 }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .sheet(isPresented: $showWorkoutView) {
+            WorkoutView()
+        }
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
+    }
+}
+
+// MARK: - Training Stats View
+struct TrainingStatsView: View {
+    @Query private var workouts: [Workout]
+    @Query private var users: [User]
+    
+    private var currentUser: User? {
+        users.first
+    }
+    
+    private var totalSessions: Int {
+        workouts.count
+    }
+    
+    private var totalXP: Int {
+        let workoutXP = workouts.reduce(0) { $0 + $1.experienceGained }
+        let userXP = currentUser?.experience ?? 0
+        return workoutXP + userXP
+    }
+    
+    private var bestWeight: Double {
+        workouts.flatMap { $0.exercises }.map { $0.weight }.max() ?? 0
+    }
+    
+    private var currentStreak: Int {
+        // Calculer la série de jours consécutifs d'entraînement
+        let calendar = Calendar.current
+        let sortedWorkouts = workouts.sorted { $0.date > $1.date }
+        
+        var streak = 0
+        var currentDate = Date()
+        
+        for workout in sortedWorkouts {
+            let workoutDay = calendar.startOfDay(for: workout.date)
+            let currentDay = calendar.startOfDay(for: currentDate)
+            
+            if calendar.dateInterval(of: .day, for: workoutDay)?.contains(currentDay) == true ||
+               calendar.dateInterval(of: .day, for: calendar.date(byAdding: .day, value: -1, to: currentDay) ?? currentDate)?.contains(workoutDay) == true {
+                streak += 1
+                currentDate = workout.date
+            } else {
+                break
+            }
+        }
+        
+        return streak
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text("Statistiques d'entraînement")
+                .font(.headline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 15) {
+                StatCard(
+                    title: "Sessions",
+                    value: "\(totalSessions)",
+                    icon: "dumbbell.fill",
+                    color: .blue
+                )
                 
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        Rectangle()
-                            .frame(width: geometry.size.width, height: 8)
-                            .opacity(0.3)
-                            .foregroundColor(.white)
-                        
-                        Rectangle()
-                            .frame(width: 0, height: 8)
-                            .foregroundColor(.blue)
-                            .shadow(color: .blue.opacity(0.5), radius: 5)
-                    }
-                    .cornerRadius(4)
-                }
-                .frame(height: 8)
+                StatCard(
+                    title: "Total XP",
+                    value: "\(totalXP)",
+                    icon: "star.fill",
+                    color: .purple
+                )
+                
+                StatCard(
+                    title: "Meilleur",
+                    value: "\(String(format: "%.0f", bestWeight)) kg",
+                    icon: "trophy.fill",
+                    color: .yellow
+                )
+                
+                StatCard(
+                    title: "Série",
+                    value: "\(currentStreak) jours",
+                    icon: "flame.fill",
+                    color: .orange
+                )
             }
         }
         .padding(20)
@@ -166,836 +291,122 @@ struct UserProfileCard: View {
     }
 }
 
-// MARK: - Navigation Button
-struct NavigationButton: View {
-    let title: String
-    let subtitle: String
-    let icon: String
-    let color: Color
-    let action: () -> Void
+// MARK: - Recent Workouts View
+struct RecentWorkoutsView: View {
+    @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
+    
+    private var recentWorkouts: [Workout] {
+        Array(workouts.prefix(5)) // Les 5 derniers workouts
+    }
     
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 15) {
-                Image(systemName: icon)
-                    .font(.system(size: 30))
-                    .foregroundColor(color)
-                    .frame(width: 50, height: 50)
-                    .background(color.opacity(0.2))
-                    .cornerRadius(12)
-                    .shadow(color: color.opacity(0.3), radius: 5)
-                
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(title)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
+        VStack(alignment: .leading, spacing: 15) {
+            Text("Entraînements récents")
+                .font(.headline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if recentWorkouts.isEmpty {
+                VStack(spacing: 10) {
+                    Image(systemName: "dumbbell")
+                        .font(.system(size: 40))
+                        .foregroundColor(.gray)
                     
-                    Text(subtitle)
+                    Text("Aucun entraînement")
                         .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.title3)
-                    .foregroundColor(color)
-            }
-            .padding(20)
-            .background(
-                LinearGradient(
-                    colors: [color.opacity(0.1), color.opacity(0.05)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .cornerRadius(16)
-            .shadow(color: color.opacity(0.2), radius: 8)
-        }
-    }
-}
-
-// MARK: - Training Hub View
-struct SimpleWorkoutView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedTab = 0
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Header
-                    Text("Training Hub")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.top, 20)
-                        .padding(.bottom, 30)
+                        .foregroundColor(.gray)
                     
-                    // Tab Selector
-                    Picker("Training Type", selection: $selectedTab) {
-                        Text("Custom Training").tag(0)
-                        Text("Discover Training").tag(1)
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .padding(.horizontal)
-                    .padding(.bottom, 20)
-                    
-                    // Content based on selected tab
-                    TabView(selection: $selectedTab) {
-                        CustomTrainingView()
-                            .tag(0)
-                        DiscoverTrainingView()
-                            .tag(1)
-                    }
-                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                }
-            }
-            .navigationTitle("Training")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundColor(.blue)
-                }
-            }
-        }
-        .preferredColorScheme(.dark)
-    }
-}
-
-// MARK: - Custom Training View
-struct CustomTrainingView: View {
-    @State private var selectedMuscleGroup = "All"
-    @State private var showCreateWorkout = false
-    
-    let muscleGroups = ["All", "Chest", "Back", "Legs", "Arms", "Shoulders", "Core"]
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Quick Start Section
-                VStack(alignment: .leading, spacing: 15) {
-                    Text("⚡ Quick Start")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
-                    Button {
-                        showCreateWorkout = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(.blue)
-                            
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Create New Workout")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                
-                                Text("Design your custom training session")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.blue)
-                        }
-                        .padding(20)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(16)
-                    }
-                }
-                
-                // Muscle Group Filter
-                VStack(alignment: .leading, spacing: 15) {
-                    Text("🎯 Target Muscle Group")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(muscleGroups, id: \.self) { group in
-                                Button {
-                                    selectedMuscleGroup = group
-                                } label: {
-                                    Text(group)
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(selectedMuscleGroup == group ? .black : .white)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 8)
-                                        .background(selectedMuscleGroup == group ? Color.blue : Color.white.opacity(0.2))
-                                        .cornerRadius(20)
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-                }
-                
-                // Recent Workouts
-                VStack(alignment: .leading, spacing: 15) {
-                    Text("📚 Recent Workouts")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
-                    VStack(spacing: 12) {
-                        WorkoutCard(
-                            name: "Upper Body Power",
-                            duration: "45 min",
-                            exercises: 8,
-                            lastPerformed: "2 days ago",
-                            difficulty: .normal
-                        )
-                        
-                        WorkoutCard(
-                            name: "Leg Day Destroyer",
-                            duration: "60 min",
-                            exercises: 10,
-                            lastPerformed: "5 days ago",
-                            difficulty: .hard
-                        )
-                        
-                        WorkoutCard(
-                            name: "Core Crusher",
-                            duration: "30 min",
-                            exercises: 6,
-                            lastPerformed: "1 week ago",
-                            difficulty: .easy
-                        )
-                    }
-                }
-                
-                Spacer(minLength: 50)
-            }
-            .padding()
-        }
-        .sheet(isPresented: $showCreateWorkout) {
-            CreateWorkoutView()
-        }
-    }
-}
-
-// MARK: - Discover Training View
-struct DiscoverTrainingView: View {
-    let featuredWorkouts = [
-        ("🔥 HIIT Inferno", "20 min", "Beginner", "High intensity interval training"),
-        ("💪 Strength Builder", "45 min", "Intermediate", "Build muscle and power"),
-        ("🧘‍♀️ Mobility Flow", "30 min", "All Levels", "Improve flexibility"),
-        ("🏃‍♂️ Cardio Blast", "35 min", "Intermediate", "Burn calories fast")
-    ]
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Featured Section
-                VStack(alignment: .leading, spacing: 15) {
-                    Text("⭐ Featured Workouts")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
-                    VStack(spacing: 12) {
-                        ForEach(featuredWorkouts, id: \.0) { workout in
-                            FeaturedWorkoutCard(
-                                title: workout.0,
-                                duration: workout.1,
-                                level: workout.2,
-                                description: workout.3
-                            )
-                        }
-                    }
-                }
-                
-                // Categories
-                VStack(alignment: .leading, spacing: 15) {
-                    Text("📂 Categories")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
-                    LazyVGrid(columns: [
-                        GridItem(.flexible()),
-                        GridItem(.flexible())
-                    ], spacing: 15) {
-                        CategoryCard(title: "Strength", icon: "dumbbell.fill", color: .red)
-                        CategoryCard(title: "Cardio", icon: "heart.fill", color: .orange)
-                        CategoryCard(title: "Flexibility", icon: "figure.yoga", color: .green)
-                        CategoryCard(title: "HIIT", icon: "flame.fill", color: .purple)
-                    }
-                }
-                
-                Spacer(minLength: 50)
-            }
-            .padding()
-        }
-    }
-}
-
-// MARK: - Workout Card
-struct WorkoutCard: View {
-    let name: String
-    let duration: String
-    let exercises: Int
-    let lastPerformed: String
-    let difficulty: WorkoutDifficulty
-    
-    var body: some View {
-        Button {
-            // Start workout action
-        } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text(name)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.leading)
-                    
-                    Spacer()
-                    
-                    DifficultyBadge(difficulty: difficulty)
-                }
-                
-                HStack(spacing: 20) {
-                    Label(duration, systemImage: "clock")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.8))
-                    
-                    Label("\(exercises) exercises", systemImage: "list.bullet")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.8))
-                }
-                
-                Text("Last: \(lastPerformed)")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
-            }
-            .padding(16)
-            .background(Color.white.opacity(0.1))
-            .cornerRadius(12)
-        }
-    }
-}
-
-// MARK: - Featured Workout Card
-struct FeaturedWorkoutCard: View {
-    let title: String
-    let duration: String
-    let level: String
-    let description: String
-    
-    var body: some View {
-        Button {
-            // Start featured workout
-        } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.leading)
-                    
-                    Spacer()
-                    
-                    Text(level)
+                    Text("Commencez votre première session !")
                         .font(.caption)
-                        .fontWeight(.semibold)
+                        .foregroundColor(.gray.opacity(0.7))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(30)
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(recentWorkouts, id: \.id) { workout in
+                        WorkoutHistoryCard(workout: workout)
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(16)
+        .shadow(color: .blue.opacity(0.2), radius: 10)
+    }
+}
+
+// MARK: - Workout History Card
+struct WorkoutHistoryCard: View {
+    let workout: Workout
+    
+    private var formattedDuration: String {
+        let minutes = Int(workout.duration) / 60
+        let seconds = Int(workout.duration) % 60
+        return String(format: "%02d:%02d", minutes, seconds)
+    }
+    
+    var body: some View {
+        HStack(spacing: 15) {
+            // Difficulty Indicator
+            Circle()
+                .fill(Color(hex: workout.difficulty.color))
+                .frame(width: 12, height: 12)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(workout.name)
+                        .font(.headline)
                         .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.8))
-                        .cornerRadius(8)
+                    
+                    if workout.isAwakening {
+                        Image(systemName: "star.fill")
+                            .font(.caption)
+                            .foregroundColor(.purple)
+                    }
                 }
                 
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.leading)
-                
-                HStack {
-                    Label(duration, systemImage: "clock")
+                HStack(spacing: 15) {
+                    Text(workout.date, style: .date)
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.6))
                     
-                    Spacer()
+                    Text("\(workout.exercises.count) exercices")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
                     
-                    Image(systemName: "play.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.blue)
+                    Text(formattedDuration)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
                 }
             }
-            .padding(16)
-            .background(Color.white.opacity(0.1))
-            .cornerRadius(12)
-        }
-    }
-}
-
-// MARK: - Category Card
-struct CategoryCard: View {
-    let title: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        Button {
-            // Browse category
-        } label: {
-            VStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 30))
-                    .foregroundColor(color)
-                
-                Text(title)
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("+\(workout.experienceGained)")
                     .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-            }
-            .frame(height: 80)
-            .frame(maxWidth: .infinity)
-            .background(Color.white.opacity(0.1))
-            .cornerRadius(12)
-        }
-    }
-}
-
-// MARK: - Create Workout View
-struct CreateWorkoutView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var workoutName = ""
-    @State private var selectedMuscleGroup = "Chest"
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Color.black.ignoresSafeArea()
+                    .fontWeight(.semibold)
+                    .foregroundColor(.purple)
                 
-                VStack(spacing: 20) {
-                    Text("Create Custom Workout")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.top)
-                    
-                    Text("Design your perfect training session")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Text("Coming Soon!")
-                        .font(.title3)
-                        .foregroundColor(.blue)
-                        .padding(.top, 50)
-                    
-                    Spacer()
-                }
-                .padding()
-            }
-            .navigationTitle("Create Workout")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundColor(.blue)
-                }
+                Text("XP")
+                    .font(.caption2)
+                    .foregroundColor(.purple.opacity(0.8))
             }
         }
-        .preferredColorScheme(.dark)
+        .padding(15)
+        .background(Color.black.opacity(0.3))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(hex: workout.difficulty.color).opacity(0.3), lineWidth: 1)
+        )
     }
 }
 
-// MARK: - Progress Analytics View
-struct SimpleProgressView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedTimeframe = "This Week"
-    
-    let timeframes = ["This Week", "This Month", "Last 3 Months"]
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 25) {
-                        // Header
-                        VStack(spacing: 15) {
-                            Text("Progress Analytics")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            Picker("Timeframe", selection: $selectedTimeframe) {
-                                ForEach(timeframes, id: \.self) { timeframe in
-                                    Text(timeframe).tag(timeframe)
-                                }
-                            }
-                            .pickerStyle(SegmentedPickerStyle())
-                            .padding(.horizontal)
-                        }
-                        
-                        // Weekly Overview
-                        VStack(alignment: .leading, spacing: 15) {
-                            Text("📈 Weekly Overview")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            LazyVGrid(columns: [
-                                GridItem(.flexible()),
-                                GridItem(.flexible())
-                            ], spacing: 15) {
-                                StatCard(
-                                    title: "Workouts",
-                                    value: "12",
-                                    subtitle: "This week",
-                                    icon: "dumbbell.fill",
-                                    color: .blue
-                                )
-                                
-                                StatCard(
-                                    title: "Total Time",
-                                    value: "8.5h",
-                                    subtitle: "Training time",
-                                    icon: "clock.fill",
-                                    color: .green
-                                )
-                                
-                                StatCard(
-                                    title: "Calories",
-                                    value: "3,420",
-                                    subtitle: "Burned",
-                                    icon: "flame.fill",
-                                    color: .orange
-                                )
-                                
-                                StatCard(
-                                    title: "PR's",
-                                    value: "5",
-                                    subtitle: "New records",
-                                    icon: "trophy.fill",
-                                    color: .yellow
-                                )
-                            }
-                        }
-                        
-                        // Strength Progress
-                        VStack(alignment: .leading, spacing: 15) {
-                            Text("💪 Strength Progress")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            VStack(spacing: 12) {
-                                StrengthProgressCard(
-                                    exercise: "Bench Press",
-                                    current: "185 lbs",
-                                    previous: "175 lbs",
-                                    improvement: "+10 lbs"
-                                )
-                                
-                                StrengthProgressCard(
-                                    exercise: "Deadlift",
-                                    current: "275 lbs",
-                                    previous: "265 lbs",
-                                    improvement: "+10 lbs"
-                                )
-                                
-                                StrengthProgressCard(
-                                    exercise: "Squat",
-                                    current: "225 lbs",
-                                    previous: "220 lbs",
-                                    improvement: "+5 lbs"
-                                )
-                            }
-                        }
-                        
-                        // Body Composition
-                        VStack(alignment: .leading, spacing: 15) {
-                            Text("📏 Body Composition")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            VStack(spacing: 12) {
-                                BodyMetricCard(
-                                    metric: "Weight",
-                                    current: "172 lbs",
-                                    change: "-2 lbs",
-                                    isPositive: false
-                                )
-                                
-                                BodyMetricCard(
-                                    metric: "Body Fat",
-                                    current: "12.5%",
-                                    change: "-1.2%",
-                                    isPositive: false
-                                )
-                                
-                                BodyMetricCard(
-                                    metric: "Muscle Mass",
-                                    current: "145 lbs",
-                                    change: "+3 lbs",
-                                    isPositive: true
-                                )
-                            }
-                        }
-                        
-                        // Weekly Activity Chart Placeholder
-                        VStack(alignment: .leading, spacing: 15) {
-                            Text("📊 Activity Chart")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            VStack(spacing: 10) {
-                                Text("Weekly Training Volume")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                
-                                Text("Chart visualization coming soon")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.7))
-                                
-                                Rectangle()
-                                    .fill(Color.white.opacity(0.1))
-                                    .frame(height: 200)
-                                    .cornerRadius(12)
-                                    .overlay(
-                                        Text("📈 Interactive Charts\nComing Soon!")
-                                            .font(.headline)
-                                            .foregroundColor(.blue)
-                                            .multilineTextAlignment(.center)
-                                    )
-                            }
-                        }
-                        
-                        Spacer(minLength: 50)
-                    }
-                    .padding()
-                }
-            }
-            .navigationTitle("Progress")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundColor(.blue)
-                }
-            }
-        }
-        .preferredColorScheme(.dark)
-    }
-}
-
-// MARK: - Quests & Challenges View
-struct SimpleQuestsView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedCategory = "All"
-    
-    let categories = ["All", "Strength", "Cardio", "Consistency", "Habits"]
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 25) {
-                        QuestsHeaderView()
-                        QuestCategoryFilterView(selectedCategory: $selectedCategory, categories: categories)
-                        ActiveQuestsSection()
-                        AvailableQuestsSection()
-                        RecentAchievementsSection()
-                        Spacer(minLength: 50)
-                    }
-                    .padding()
-                }
-            }
-            .navigationTitle("Quests")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundColor(.blue)
-                }
-            }
-        }
-        .preferredColorScheme(.dark)
-    }
-}
-
-// MARK: - Quest View Components
-struct QuestsHeaderView: View {
-    var body: some View {
-        VStack(spacing: 15) {
-            Text("Quests & Challenges")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-            
-            Text("Level up your fitness journey")
-                .font(.title3)
-                .foregroundColor(.indigo.opacity(0.8))
-        }
-        .padding(.top, 10)
-    }
-}
-
-struct QuestCategoryFilterView: View {
-    @Binding var selectedCategory: String
-    let categories: [String]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            Text("📂 Categories")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(categories, id: \.self) { category in
-                        Button {
-                            selectedCategory = category
-                        } label: {
-                            Text(category)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(selectedCategory == category ? .black : .white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(selectedCategory == category ? Color.indigo : Color.white.opacity(0.2))
-                                .cornerRadius(20)
-                        }
-                    }
-                }
-                .padding(.horizontal)
-            }
-        }
-    }
-}
-
-struct ActiveQuestsSection: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            Text("🔥 Active Quests")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-            
-            VStack(spacing: 15) {
-                QuestCard(
-                    title: "Consistency Streak",
-                    description: "Work out 5 days this week",
-                    progress: 3,
-                    target: 5,
-                    reward: 150,
-                    isCompleted: false
-                )
-                
-                QuestCard(
-                    title: "Strength Challenger",
-                    description: "Increase bench press by 10 lbs",
-                    progress: 7,
-                    target: 10,
-                    reward: 200,
-                    isCompleted: false
-                )
-                
-                QuestCard(
-                    title: "Cardio Explorer",
-                    description: "Complete 120 minutes of cardio",
-                    progress: 85,
-                    target: 120,
-                    reward: 100,
-                    isCompleted: false
-                )
-            }
-        }
-    }
-}
-
-struct AvailableQuestsSection: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            Text("✨ Available Quests")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-            
-            VStack(spacing: 15) {
-                AvailableQuestCard(
-                    title: "Perfect Week",
-                    description: "Complete all planned workouts this week",
-                    reward: "300 XP + Badge",
-                    estimatedTime: "7 days",
-                    difficulty: .hard
-                )
-                
-                AvailableQuestCard(
-                    title: "Morning Warrior",
-                    description: "Complete 3 morning workouts",
-                    reward: "75 XP",
-                    estimatedTime: "1 week",
-                    difficulty: .easy
-                )
-                
-                AvailableQuestCard(
-                    title: "Leg Day Legend",
-                    description: "Complete 4 leg workouts this month",
-                    reward: "200 XP",
-                    estimatedTime: "4 weeks",
-                    difficulty: .normal
-                )
-            }
-        }
-    }
-}
-
-struct RecentAchievementsSection: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            Text("🏆 Recent Achievements")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-            
-            VStack(spacing: 12) {
-                AchievementCard(
-                    title: "First Week Complete",
-                    description: "Completed your first week of training",
-                    dateEarned: "2 days ago",
-                    xpEarned: 100
-                )
-                
-                AchievementCard(
-                    title: "Strength Gains",
-                    description: "Increased total lifting volume by 20%",
-                    dateEarned: "1 week ago",
-                    xpEarned: 150
-                )
-            }
-        }
-    }
-}
-
-// MARK: - Nutrition View
-struct NutritionView: View {
-    @Environment(\.dismiss) private var dismiss
+// MARK: - Nutrition Tab View
+struct NutritionTabView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var selectedTab = 0
     @State private var showAddMealView = false
@@ -1021,27 +432,20 @@ struct NutritionView: View {
                     .padding(.horizontal)
                     .padding(.top, 10)
                     
-                                         // Content based on selected tab
-                     TabView(selection: $selectedTab) {
-                         TodayNutritionView()
-                             .tag(0)
-                         NutritionHistoryView()
-                             .tag(1)
-                         NutritionGoalsView()
-                             .tag(2)
-                     }
-                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                    // Content based on selected tab
+                    TabView(selection: $selectedTab) {
+                        TodayNutritionView()
+                            .tag(0)
+                        NutritionHistoryView()
+                            .tag(1)
+                        NutritionGoalsView()
+                            .tag(2)
+                    }
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 }
             }
             .navigationTitle("Nutrition Hub")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundColor(.blue)
-                }
-                
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showAddMealView = true
@@ -1056,6 +460,597 @@ struct NutritionView: View {
         .sheet(isPresented: $showAddMealView) {
             AddMealView()
         }
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
+    }
+}
+
+// MARK: - Quick Stats View
+struct QuickStatsView: View {
+    @Query private var workouts: [Workout]
+    @Query private var meals: [Meal]
+    
+    private var todayWorkouts: [Workout] {
+        let calendar = Calendar.current
+        let today = Date()
+        let startOfDay = calendar.startOfDay(for: today)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? today
+        
+        return workouts.filter { $0.date >= startOfDay && $0.date < endOfDay }
+    }
+    
+    private var todayMeals: [Meal] {
+        let calendar = Calendar.current
+        let today = Date()
+        let startOfDay = calendar.startOfDay(for: today)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? today
+        
+        return meals.filter { $0.date >= startOfDay && $0.date < endOfDay }
+    }
+    
+    private var todayCalories: Int {
+        todayMeals.reduce(0) { $0 + $1.totalCalories }
+    }
+    
+    private var todayMinutes: Int {
+        Int(todayWorkouts.reduce(0) { $0 + $1.duration } / 60)
+    }
+    
+    var body: some View {
+        VStack(spacing: 15) {
+            Text("Today's Summary")
+                .font(.headline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack(spacing: 15) {
+                StatCard(
+                    title: "Workouts",
+                    value: "\(todayWorkouts.count)",
+                    icon: "dumbbell.fill",
+                    color: .blue
+                )
+                
+                StatCard(
+                    title: "Calories",
+                    value: "\(todayCalories)",
+                    icon: "flame.fill",
+                    color: .orange
+                )
+                
+                StatCard(
+                    title: "Minutes",
+                    value: "\(todayMinutes)",
+                    icon: "clock.fill",
+                    color: .purple
+                )
+            }
+        }
+        .padding(20)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(16)
+        .shadow(color: .blue.opacity(0.2), radius: 10)
+    }
+}
+
+// MARK: - Stat Card
+struct StatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 24))
+                .foregroundColor(color)
+            
+            Text(value)
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 15)
+        .background(color.opacity(0.2))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - User Profile Card
+struct UserProfileCard: View {
+    @Query private var workouts: [Workout]
+    @Query private var users: [User]
+    
+    private var currentUser: User? {
+        users.first
+    }
+    
+    private var totalXP: Int {
+        let workoutXP = workouts.reduce(0) { $0 + $1.experienceGained }
+        let userXP = currentUser?.experience ?? 0
+        return workoutXP + userXP
+    }
+    
+    private var currentLevel: Int {
+        if let user = currentUser {
+            return user.level
+        } else {
+            return max(1, totalXP / 100 + 1)
+        }
+    }
+    
+    private var currentXPInLevel: Int {
+        if let user = currentUser {
+            return user.experience
+        } else {
+            return totalXP % 100
+        }
+    }
+    
+    private var xpToNextLevel: Int {
+        if let user = currentUser {
+            return user.experienceToNextLevel - user.experience
+        } else {
+            return 100 - currentXPInLevel
+        }
+    }
+    
+    private var levelTitle: String {
+        if let user = currentUser {
+            return user.currentTitle
+        } else {
+            switch currentLevel {
+            case 1...5:
+                return "Newbie Hunter"
+            case 6...15:
+                return "Fighter"
+            case 16...30:
+                return "Warrior"
+            case 31...50:
+                return "Elite Hunter"
+            case 51...80:
+                return "Shadow Warrior"
+            case 81...:
+                return "Shadow Monarch"
+            default:
+                return "Hunter"
+            }
+        }
+    }
+    
+
+    
+    private var progressPercentage: Double {
+        if let user = currentUser {
+            return Double(user.experience) / Double(user.experienceToNextLevel)
+        } else {
+            return Double(currentXPInLevel) / 100.0
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 15) {
+            // Avatar et niveau
+            HStack {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.blue)
+                    .shadow(color: .blue.opacity(0.3), radius: 10)
+                
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Hunter")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    
+                    Text(levelTitle)
+                        .font(.subheadline)
+                        .foregroundColor(.purple.opacity(0.8))
+                    
+                    Text("Level \(currentLevel)")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.blue)
+                }
+                
+                Spacer()
+            }
+            
+            // Barre de progression XP
+            VStack(alignment: .leading, spacing: 5) {
+                HStack {
+                    Text("Experience")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.8))
+                    
+                    Spacer()
+                    
+                    if let user = currentUser {
+                        Text("\(user.experience) / \(user.experienceToNextLevel) XP")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
+                    } else {
+                        Text("\(currentXPInLevel) / 100 XP")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+                
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .frame(width: geometry.size.width, height: 8)
+                            .opacity(0.3)
+                            .foregroundColor(.white)
+                        
+                        Rectangle()
+                            .frame(width: min(CGFloat(progressPercentage) * geometry.size.width, geometry.size.width), height: 8)
+                            .foregroundColor(.blue)
+                            .shadow(color: .blue.opacity(0.5), radius: 5)
+                            .animation(.spring(), value: progressPercentage)
+                    }
+                    .cornerRadius(4)
+                }
+                .frame(height: 8)
+            }
+        }
+        .padding(20)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(16)
+        .shadow(color: .blue.opacity(0.2), radius: 10)
+    }
+}
+
+// MARK: - Supporting Views for Nutrition
+
+// Today Nutrition View
+struct TodayNutritionView: View {
+    @Query private var meals: [Meal]
+    
+    private var todayMeals: [Meal] {
+        let calendar = Calendar.current
+        let today = Date()
+        let startOfDay = calendar.startOfDay(for: today)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? today
+        
+        return meals.filter { $0.date >= startOfDay && $0.date < endOfDay }
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Daily Summary Card
+                VStack(spacing: 15) {
+                    Text("Today's Summary")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    
+                    HStack(spacing: 20) {
+                        NutritionSummaryItem(title: "Calories", value: "\(todayMeals.reduce(0) { $0 + $1.totalCalories })", unit: "kcal", color: .orange)
+                        NutritionSummaryItem(title: "Protein", value: String(format: "%.0f", todayMeals.reduce(0) { $0 + $1.totalProtein }), unit: "g", color: .red)
+                        NutritionSummaryItem(title: "Carbs", value: String(format: "%.0f", todayMeals.reduce(0) { $0 + $1.totalCarbs }), unit: "g", color: .blue)
+                        NutritionSummaryItem(title: "Fat", value: String(format: "%.0f", todayMeals.reduce(0) { $0 + $1.totalFat }), unit: "g", color: .yellow)
+                    }
+                }
+                .padding(20)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(16)
+                
+                // Meals Section
+                VStack(alignment: .leading, spacing: 15) {
+                    Text("Today's Meals")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    
+                    VStack(spacing: 10) {
+                        ForEach(MealType.allCases, id: \.self) { mealType in
+                            MealSectionCard(mealType: mealType, meals: todayMeals.filter { $0.mealType == mealType })
+                        }
+                    }
+                }
+                
+                Spacer(minLength: 50)
+            }
+            .padding()
+        }
+    }
+}
+
+// Nutrition Summary Item
+struct NutritionSummaryItem: View {
+    let title: String
+    let value: String
+    let unit: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 5) {
+            Text(value)
+                    .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            Text(unit)
+                .font(.caption2)
+                    .foregroundColor(color)
+            
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// Meal Section Card
+struct MealSectionCard: View {
+    let mealType: MealType
+    let meals: [Meal]
+    
+    private var totalCalories: Int {
+        meals.reduce(0) { $0 + $1.totalCalories }
+    }
+    
+    var body: some View {
+        HStack {
+            Image(systemName: mealType.icon)
+                .font(.title2)
+                .foregroundColor(Color(hex: mealType.color))
+                .frame(width: 40)
+            
+            VStack(alignment: .leading, spacing: 3) {
+                Text(mealType.rawValue)
+                    .font(.headline)
+                        .foregroundColor(.white)
+                
+                Text(meals.isEmpty ? "No meals added" : "\(meals.count) meal(s)")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            
+            Spacer()
+            
+            Text("\(totalCalories) kcal")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.white.opacity(0.8))
+        }
+        .padding(15)
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(12)
+    }
+}
+
+// Nutrition History View
+struct NutritionHistoryView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var meals: [Meal]
+    @State private var selectedPeriod: HistoryPeriod = .week
+    
+    private var filteredMeals: [Meal] {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        let startDate: Date
+        switch selectedPeriod {
+        case .week:
+            startDate = calendar.date(byAdding: .weekOfYear, value: -1, to: now) ?? now
+        case .month:
+            startDate = calendar.date(byAdding: .month, value: -1, to: now) ?? now
+        case .year:
+            startDate = calendar.date(byAdding: .year, value: -1, to: now) ?? now
+        }
+        
+        return meals.filter { $0.date >= startDate }
+    }
+    
+    private var groupedMeals: [Date: [Meal]] {
+        Dictionary(grouping: filteredMeals) { meal in
+            Calendar.current.startOfDay(for: meal.date)
+        }
+    }
+    
+    var body: some View {
+        ScrollView {
+                VStack(spacing: 20) {
+                // Period Selector
+                Picker("Period", selection: $selectedPeriod) {
+                    ForEach(HistoryPeriod.allCases, id: \.self) { period in
+                        Text(period.rawValue).tag(period)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding(.horizontal)
+                
+                // Average daily intake
+                VStack(spacing: 15) {
+                    Text("Average Daily Intake")
+                        .font(.headline)
+                                    .foregroundColor(.white)
+                    
+                    let avgCalories = groupedMeals.isEmpty ? 0 : groupedMeals.values.map { $0.reduce(0) { $0 + $1.totalCalories } }.reduce(0, +) / groupedMeals.count
+                    let avgProtein = groupedMeals.isEmpty ? 0 : groupedMeals.values.map { $0.reduce(0) { $0 + $1.totalProtein } }.reduce(0, +) / Double(groupedMeals.count)
+                    
+                    HStack(spacing: 20) {
+                        VStack {
+                            Text("\(avgCalories)")
+                                    .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.orange)
+                            Text("kcal/day")
+                                .font(.caption)
+                                .foregroundColor(.orange.opacity(0.8))
+                        }
+                        
+                        VStack {
+                            Text(String(format: "%.0f", avgProtein))
+                                    .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.red)
+                            Text("protein/day")
+                                .font(.caption)
+                                .foregroundColor(.red.opacity(0.8))
+                        }
+                    }
+                }
+                .padding(20)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(16)
+                
+                // Daily breakdowns
+                LazyVStack(spacing: 10) {
+                    ForEach(groupedMeals.keys.sorted(by: >), id: \.self) { date in
+                        if let dayMeals = groupedMeals[date] {
+                            DailyNutritionCard(date: date, meals: dayMeals)
+                        }
+                    }
+                }
+                
+                Spacer(minLength: 50)
+            }
+            .padding()
+        }
+    }
+}
+
+// Nutrition Goals View
+struct NutritionGoalsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var goals: [NutritionGoals]
+    @Query private var meals: [Meal]
+    @State private var showEditGoals = false
+    
+    private var currentGoals: NutritionGoals {
+        return goals.first ?? NutritionGoals()
+    }
+    
+    private var todayMeals: [Meal] {
+        let calendar = Calendar.current
+        let today = Date()
+        let startOfDay = calendar.startOfDay(for: today)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? today
+        
+        return meals.filter { $0.date >= startOfDay && $0.date < endOfDay }
+    }
+    
+    private var todayTotals: (calories: Int, protein: Double, carbs: Double, fat: Double) {
+        let totalCalories = todayMeals.reduce(0) { $0 + $1.totalCalories }
+        let totalProtein = todayMeals.reduce(0) { $0 + $1.totalProtein }
+        let totalCarbs = todayMeals.reduce(0) { $0 + $1.totalCarbs }
+        let totalFat = todayMeals.reduce(0) { $0 + $1.totalFat }
+        return (totalCalories, totalProtein, totalCarbs, totalFat)
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Goals Overview
+                VStack(spacing: 15) {
+                    HStack {
+                        Text("Today's Goals")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                        
+                        Spacer()
+                        
+                        Button("Edit") {
+                            showEditGoals = true
+                        }
+                        .foregroundColor(.blue)
+                    }
+                    
+                    VStack(spacing: 15) {
+                        NutritionGoalCard(
+                            title: "Calories",
+                            current: todayTotals.calories,
+                            goal: currentGoals.dailyCaloriesGoal,
+                            unit: "kcal",
+                            color: .orange,
+                            icon: "flame.fill"
+                        )
+                        
+                        NutritionGoalCard(
+                            title: "Protein",
+                            current: Int(todayTotals.protein),
+                            goal: Int(currentGoals.dailyProteinGoal),
+                            unit: "g",
+                            color: .red,
+                            icon: "heart.fill"
+                        )
+                        
+                        NutritionGoalCard(
+                            title: "Carbs",
+                            current: Int(todayTotals.carbs),
+                            goal: Int(currentGoals.dailyCarbsGoal),
+                            unit: "g",
+                            color: .blue,
+                            icon: "drop.fill"
+                        )
+                        
+                        NutritionGoalCard(
+                            title: "Fat",
+                            current: Int(todayTotals.fat),
+                            goal: Int(currentGoals.dailyFatGoal),
+                            unit: "g",
+                            color: .yellow,
+                            icon: "circle.fill"
+                        )
+                    }
+                }
+                
+                // Weekly Progress
+                WeeklyGoalsProgress(currentGoals: currentGoals)
+                
+                // Tips Section
+                GoalsTipsSection()
+                
+                Spacer(minLength: 50)
+            }
+            .padding()
+        }
+        .onAppear {
+            if goals.isEmpty {
+                let defaultGoals = NutritionGoals()
+                modelContext.insert(defaultGoals)
+                try? modelContext.save()
+            }
+        }
+        .sheet(isPresented: $showEditGoals) {
+            EditNutritionGoalsView(currentGoals: currentGoals)
+        }
+    }
+}
+
+// Tab Button
+struct TabButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .foregroundColor(isSelected ? .green : .white.opacity(0.6))
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
+                .background(
+                    isSelected ? Color.green.opacity(0.2) : Color.clear
+                )
+                .cornerRadius(8)
+        }
     }
 }
 
@@ -1063,177 +1058,299 @@ struct NutritionView: View {
 struct AddMealView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    
     @State private var selectedMealType: MealType = .breakfast
-    @State private var showBarcodeScannerView = false
-    @State private var showManualEntryView = false
+    @State private var mealName = ""
+    @State private var foodItems: [FoodItemEntry] = []
+    @State private var showAddFoodView = false
+    
+    private var totalCalories: Int {
+        foodItems.reduce(0) { $0 + $1.totalCalories }
+    }
+    
+    private var totalProtein: Double {
+        foodItems.reduce(0) { $0 + $1.totalProtein }
+    }
+    
+    private var totalCarbs: Double {
+        foodItems.reduce(0) { $0 + $1.totalCarbs }
+    }
+    
+    private var totalFat: Double {
+        foodItems.reduce(0) { $0 + $1.totalFat }
+    }
     
     var body: some View {
         NavigationView {
             ZStack {
                 Color.black.ignoresSafeArea()
                 
-                VStack(spacing: 30) {
-                    // Header
-                    VStack(spacing: 10) {
-                        Text("Add Meal")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
+                ScrollView {
+                    VStack(spacing: 25) {
+                        // Header
+                        VStack(spacing: 10) {
+                            Text("Ajouter un Repas")
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                            
+                            Text("Trackez votre nutrition")
+                                .font(.title3)
+                                .foregroundColor(.green.opacity(0.8))
+                        }
+                        .padding(.top, 20)
                         
-                        Text("Track your nutrition")
-                            .font(.title3)
-                            .foregroundColor(.green.opacity(0.8))
-                    }
-                    .padding(.top, 20)
-                    
-                    // Meal Type Selector
-                    VStack(alignment: .leading, spacing: 15) {
-                        Text("Meal Type")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        
-                        LazyVGrid(columns: [
-                            GridItem(.flexible()),
-                            GridItem(.flexible())
-                        ], spacing: 15) {
-                            ForEach(MealType.allCases, id: \.self) { mealType in
-                                MealTypeCard(
-                                    mealType: mealType,
-                                    isSelected: selectedMealType == mealType
-                                ) {
-                                    selectedMealType = mealType
+                        // Meal Type Selection
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("Type de Repas")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            
+                            LazyVGrid(columns: [
+                                GridItem(.flexible()),
+                                GridItem(.flexible())
+                            ], spacing: 15) {
+                                ForEach(MealType.allCases, id: \.self) { mealType in
+                                    MealTypeSelectionCard(
+                                        mealType: mealType,
+                                        isSelected: selectedMealType == mealType
+                                    ) {
+                                        selectedMealType = mealType
+                                    }
                                 }
                             }
                         }
-                    }
-                    
-                    // Add Options
-                    VStack(spacing: 20) {
-                        Text("How do you want to add food?")
-                            .font(.headline)
-                            .foregroundColor(.white)
+                        .padding(20)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(16)
                         
-                        VStack(spacing: 15) {
-                            // Barcode Scanner Option
-                            Button {
-                                showBarcodeScannerView = true
-                            } label: {
-                                HStack(spacing: 15) {
-                                    Image(systemName: "barcode.viewfinder")
-                                        .font(.system(size: 30))
-                                        .foregroundColor(.blue)
-                                        .frame(width: 50, height: 50)
-                                        .background(Color.blue.opacity(0.2))
-                                        .cornerRadius(12)
-                                    
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text("Scan Barcode")
-                                            .font(.title3)
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(.white)
-                                        
-                                        Text("Quickly scan product barcode")
-                                            .font(.subheadline)
-                                            .foregroundColor(.white.opacity(0.7))
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "chevron.right")
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
+                        // Meal Name
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("Nom du Repas (Optionnel)")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            
+                            TextField("Ex: Petit-déjeuner énergétique", text: $mealName)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        .padding(20)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(16)
+                        
+                        // Food Items Section
+                        VStack(alignment: .leading, spacing: 15) {
+                            HStack {
+                                Text("Aliments")
+                                    .font(.headline)
+                                .foregroundColor(.white)
+                            
+                                Spacer()
+                                
+                                Button {
+                                    showAddFoodView = true
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.green)
                                 }
-                                .padding(20)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color.blue.opacity(0.1), Color.blue.opacity(0.05)],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .cornerRadius(16)
                             }
                             
-                            // Manual Entry Option
-                            Button {
-                                showManualEntryView = true
-                            } label: {
-                                HStack(spacing: 15) {
-                                    Image(systemName: "square.and.pencil")
-                                        .font(.system(size: 30))
-                                        .foregroundColor(.green)
-                                        .frame(width: 50, height: 50)
-                                        .background(Color.green.opacity(0.2))
-                                        .cornerRadius(12)
+                            if foodItems.isEmpty {
+                                VStack(spacing: 10) {
+                                    Image(systemName: "fork.knife")
+                                        .font(.system(size: 40))
+                                        .foregroundColor(.gray)
                                     
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text("Manual Entry")
-                                            .font(.title3)
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(.white)
-                                        
-                                        Text("Enter food details manually")
-                                            .font(.subheadline)
-                                            .foregroundColor(.white.opacity(0.7))
-                                    }
+                                    Text("Aucun aliment ajouté")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
                                     
-                                    Spacer()
-                                    
-                                    Image(systemName: "chevron.right")
-                                        .font(.title3)
-                                        .foregroundColor(.green)
+                                    Text("Appuyez sur + pour ajouter des aliments")
+                                        .font(.caption)
+                                        .foregroundColor(.gray.opacity(0.7))
                                 }
-                                .padding(20)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color.green.opacity(0.1), Color.green.opacity(0.05)],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .cornerRadius(16)
+                                .frame(maxWidth: .infinity)
+                                .padding(30)
+                            } else {
+                                VStack(spacing: 10) {
+                                    ForEach(foodItems.indices, id: \.self) { index in
+                                        FoodItemCard(
+                                            foodItem: foodItems[index],
+                                            onDelete: {
+                                                foodItems.remove(at: index)
+                                            },
+                                            onEdit: { newQuantity in
+                                                foodItems[index].quantity = newQuantity
+                                            }
+                                        )
+                                    }
+                                }
                             }
                         }
+                        .padding(20)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(16)
+                        
+                        // Nutrition Summary
+                        if !foodItems.isEmpty {
+                            VStack(spacing: 15) {
+                                Text("Résumé Nutritionnel")
+                                    .font(.headline)
+                        .foregroundColor(.white)
+                                
+                                HStack(spacing: 20) {
+                                    NutritionSummaryItem(
+                                        title: "Calories",
+                                        value: "\(totalCalories)",
+                                        unit: "kcal",
+                                        color: .orange
+                                    )
+                                    
+                                    NutritionSummaryItem(
+                                        title: "Protéines",
+                                        value: String(format: "%.1f", totalProtein),
+                                        unit: "g",
+                                        color: .red
+                                    )
+                                    
+                                    NutritionSummaryItem(
+                                        title: "Glucides",
+                                        value: String(format: "%.1f", totalCarbs),
+                                        unit: "g",
+                                        color: .blue
+                                    )
+                                    
+                                    NutritionSummaryItem(
+                                        title: "Lipides",
+                                        value: String(format: "%.1f", totalFat),
+                                        unit: "g",
+                                        color: .yellow
+                                    )
+                                }
+                            }
+                            .padding(20)
+                        .background(
+                            LinearGradient(
+                                    colors: [Color.green.opacity(0.2), Color.green.opacity(0.1)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.green.opacity(0.5), lineWidth: 1)
+                            )
+                        }
+                        
+                        Spacer(minLength: 50)
                     }
-                    
-                    Spacer()
+                    .padding()
                 }
-                .padding()
             }
-            .navigationTitle("Add Meal")
+            .navigationTitle("Ajouter Repas")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button("Annuler") {
                         dismiss()
                     }
-                    .foregroundColor(.blue)
+                    .foregroundColor(.red)
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Sauvegarder") {
+                        saveMeal()
+                    }
+                    .disabled(foodItems.isEmpty)
+                    .foregroundColor(foodItems.isEmpty ? .gray : .green)
                 }
             }
         }
         .preferredColorScheme(.dark)
-                 .sheet(isPresented: $showBarcodeScannerView) {
-             BarcodeScannerView(selectedMealType: selectedMealType)
-         }
-         .sheet(isPresented: $showManualEntryView) {
-             ManualFoodEntryView(selectedMealType: selectedMealType)
-         }
+        .sheet(isPresented: $showAddFoodView) {
+            AddFoodItemView { foodItem in
+                foodItems.append(foodItem)
+            }
+        }
+    }
+    
+    private func saveMeal() {
+        let meal = Meal(
+            name: mealName.isEmpty ? selectedMealType.rawValue : mealName,
+            date: Date(),
+            mealType: selectedMealType
+        )
+        
+        // Convert FoodItemEntry to FoodItem and add to meal
+        for entry in foodItems {
+            let foodItem = FoodItem(
+                name: entry.name,
+                brand: entry.brand,
+                servingSize: entry.servingSize,
+                quantity: entry.quantity,
+                caloriesPerServing: entry.caloriesPerServing,
+                proteinPerServing: entry.proteinPerServing,
+                carbsPerServing: entry.carbsPerServing,
+                fatPerServing: entry.fatPerServing,
+                isManualEntry: true
+            )
+            
+            meal.foodItems.append(foodItem)
+            modelContext.insert(foodItem)
+        }
+        
+        meal.calculateTotals()
+        modelContext.insert(meal)
+        
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            print("Erreur lors de la sauvegarde: \(error)")
+        }
     }
 }
 
-// MARK: - Supporting Views
+// MARK: - Food Item Entry (Local struct for editing)
+struct FoodItemEntry {
+    var name: String
+    var brand: String?
+    var servingSize: Double = 100.0
+    var quantity: Double = 1.0
+    var caloriesPerServing: Int = 0
+    var proteinPerServing: Double = 0.0
+    var carbsPerServing: Double = 0.0
+    var fatPerServing: Double = 0.0
+    
+    var totalCalories: Int {
+        return Int(Double(caloriesPerServing) * quantity)
+    }
+    
+    var totalProtein: Double {
+        return proteinPerServing * quantity
+    }
+    
+    var totalCarbs: Double {
+        return carbsPerServing * quantity
+    }
+    
+    var totalFat: Double {
+        return fatPerServing * quantity
+    }
+}
 
-// Meal Type Card
-struct MealTypeCard: View {
+// MARK: - Meal Type Selection Card
+struct MealTypeSelectionCard: View {
     let mealType: MealType
     let isSelected: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 Image(systemName: mealType.icon)
-                    .font(.system(size: 30))
+                    .font(.system(size: 28))
                     .foregroundColor(isSelected ? .white : Color(hex: mealType.color))
                 
                 Text(mealType.rawValue)
@@ -1257,265 +1374,131 @@ struct MealTypeCard: View {
     }
 }
 
-// Today Nutrition View
-struct TodayNutritionView: View {
+// MARK: - Food Item Card
+struct FoodItemCard: View {
+    let foodItem: FoodItemEntry
+    let onDelete: () -> Void
+    let onEdit: (Double) -> Void
+    
+    @State private var showingQuantityEdit = false
+    @State private var editQuantity: String
+    
+    init(foodItem: FoodItemEntry, onDelete: @escaping () -> Void, onEdit: @escaping (Double) -> Void) {
+        self.foodItem = foodItem
+        self.onDelete = onDelete
+        self.onEdit = onEdit
+        self._editQuantity = State(initialValue: String(format: "%.1f", foodItem.quantity))
+    }
+    
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Daily Summary Card
-                VStack(spacing: 15) {
-                    Text("Today's Summary")
-                        .font(.title2)
-                        .fontWeight(.semibold)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(foodItem.name)
+                        .font(.headline)
                         .foregroundColor(.white)
                     
-                    HStack(spacing: 20) {
-                        NutritionSummaryItem(title: "Calories", value: "0", unit: "kcal", color: .orange)
-                        NutritionSummaryItem(title: "Protein", value: "0", unit: "g", color: .red)
-                        NutritionSummaryItem(title: "Carbs", value: "0", unit: "g", color: .blue)
-                        NutritionSummaryItem(title: "Fat", value: "0", unit: "g", color: .yellow)
-                    }
-                }
-                .padding(20)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(16)
-                
-                // Meals Section
-                VStack(alignment: .leading, spacing: 15) {
-                    Text("Today's Meals")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    
-                    VStack(spacing: 10) {
-                        ForEach(MealType.allCases, id: \.self) { mealType in
-                            MealSectionCard(mealType: mealType)
-                        }
+                    if let brand = foodItem.brand, !brand.isEmpty {
+                        Text(brand)
+                                        .font(.caption)
+                                        .foregroundColor(.white.opacity(0.7))
                     }
                 }
                 
-                Spacer(minLength: 50)
+                Spacer()
+                
+                HStack(spacing: 10) {
+                    Button {
+                        showingQuantityEdit = true
+                    } label: {
+                        Image(systemName: "pencil")
+                            .foregroundColor(.blue)
+                    }
+                    
+                    Button {
+                        onDelete()
+                    } label: {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                    }
+                }
             }
-            .padding()
+            
+            HStack {
+                Text("Quantité: \(String(format: "%.1f", foodItem.quantity))x")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.8))
+                
+                Spacer()
+                
+                Text("\(foodItem.totalCalories) kcal")
+                                .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.orange)
+            }
+            
+            HStack(spacing: 15) {
+                NutritionMicroItem(
+                    title: "P",
+                    value: String(format: "%.1f", foodItem.totalProtein),
+                    color: .red
+                )
+                
+                NutritionMicroItem(
+                    title: "G",
+                    value: String(format: "%.1f", foodItem.totalCarbs),
+                    color: .blue
+                )
+                
+                NutritionMicroItem(
+                    title: "L",
+                    value: String(format: "%.1f", foodItem.totalFat),
+                    color: .yellow
+                )
+            }
+        }
+        .padding(15)
+        .background(Color.black.opacity(0.3))
+        .cornerRadius(12)
+        .alert("Modifier la quantité", isPresented: $showingQuantityEdit) {
+            TextField("Quantité", text: $editQuantity)
+                .keyboardType(.decimalPad)
+            
+            Button("Annuler", role: .cancel) { }
+            
+            Button("Sauvegarder") {
+                if let newQuantity = Double(editQuantity), newQuantity > 0 {
+                    onEdit(newQuantity)
+                }
+            }
         }
     }
 }
 
-// Nutrition Summary Item
-struct NutritionSummaryItem: View {
+// MARK: - Nutrition Micro Item
+struct NutritionMicroItem: View {
     let title: String
     let value: String
-    let unit: String
     let color: Color
     
     var body: some View {
-        VStack(spacing: 5) {
-            Text(value)
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-            
-            Text(unit)
+        VStack(spacing: 2) {
+            Text(title)
                 .font(.caption2)
+                .fontWeight(.semibold)
                 .foregroundColor(color)
             
-            Text(title)
+            Text(value)
                 .font(.caption)
-                .foregroundColor(.white.opacity(0.7))
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-// Meal Section Card
-struct MealSectionCard: View {
-    let mealType: MealType
-    
-    var body: some View {
-        HStack {
-            Image(systemName: mealType.icon)
-                .font(.title2)
-                .foregroundColor(Color(hex: mealType.color))
-                .frame(width: 40)
-            
-            VStack(alignment: .leading, spacing: 3) {
-                Text(mealType.rawValue)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                Text("No meals added")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.6))
-            }
-            
-            Spacer()
-            
-            Text("0 kcal")
-                .font(.subheadline)
-                .fontWeight(.medium)
                 .foregroundColor(.white.opacity(0.8))
         }
-        .padding(15)
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(12)
     }
 }
 
-// Tab Button
-struct TabButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundColor(isSelected ? .green : .white.opacity(0.6))
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity)
-                .background(
-                    isSelected ? Color.green.opacity(0.2) : Color.clear
-                )
-                .cornerRadius(8)
-        }
-         }
-}
-
-// MARK: - Missing Nutrition Views
-
-// Nutrition History View
-struct NutritionHistoryView: View {
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                Text("📊 Nutrition History")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .padding(.top)
-                
-                Text("Your nutrition history will be displayed here")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                
-                Text("Add meals to see your history!")
-                    .font(.title3)
-                    .foregroundColor(.green)
-                    .padding(.top, 50)
-                
-                Spacer(minLength: 50)
-            }
-            .padding()
-        }
-    }
-}
-
-// Nutrition Goals View
-struct NutritionGoalsView: View {
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                Text("🎯 Nutrition Goals")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .padding(.top)
-                
-                Text("Set and track your daily nutrition targets")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                
-                Text("Goals feature coming soon!")
-                    .font(.title3)
-                    .foregroundColor(.green)
-                    .padding(.top, 50)
-                
-                Spacer(minLength: 50)
-            }
-            .padding()
-        }
-    }
-}
-
-// Barcode Scanner View
-struct BarcodeScannerView: View {
+// MARK: - Add Food Item View
+struct AddFoodItemView: View {
     @Environment(\.dismiss) private var dismiss
-    let selectedMealType: MealType
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    Text("📱 Barcode Scanner")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
-                    Text("Point your camera at the product barcode")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                    
-                    // Placeholder for camera view
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.white.opacity(0.1))
-                        .frame(height: 300)
-                        .overlay(
-                            VStack(spacing: 15) {
-                                Image(systemName: "camera.viewfinder")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.blue)
-                                
-                                Text("Camera Preview")
-                                    .font(.headline)
-                                    .foregroundColor(.white.opacity(0.6))
-                                
-                                Text("Barcode scanning requires camera access.\nThis is a demo placeholder.")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .multilineTextAlignment(.center)
-                            }
-                        )
-                    
-                    Button("Simulate Scan Result") {
-                        // For demo purposes - would normally process scanned barcode
-                        dismiss()
-                    }
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                    
-                    Spacer()
-                }
-                .padding()
-            }
-            .navigationTitle("Scan Barcode")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundColor(.blue)
-                }
-            }
-        }
-        .preferredColorScheme(.dark)
-    }
-}
-
-// Manual Food Entry View
-struct ManualFoodEntryView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    let selectedMealType: MealType
+    let onAdd: (FoodItemEntry) -> Void
     
     @State private var foodName = ""
     @State private var brandName = ""
@@ -1533,79 +1516,88 @@ struct ManualFoodEntryView: View {
                 
                 ScrollView {
                     VStack(spacing: 20) {
-                        Text("Add Food Manually")
+                        Text("Ajouter un Aliment")
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                             .padding(.top)
                         
-                        VStack(spacing: 15) {
+                        VStack(spacing: 20) {
                             // Basic Info
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Basic Information")
+                            VStack(alignment: .leading, spacing: 15) {
+                                Text("Informations de base")
                                     .font(.headline)
                                     .foregroundColor(.white)
                                 
-                                CustomTextField(title: "Food Name*", text: $foodName, placeholder: "e.g., Greek Yogurt")
-                                CustomTextField(title: "Brand (Optional)", text: $brandName, placeholder: "e.g., Chobani")
+                                CustomTextField(title: "Nom de l'aliment*", text: $foodName, placeholder: "Ex: Yaourt grec")
+                                CustomTextField(title: "Marque (optionnel)", text: $brandName, placeholder: "Ex: Danone")
                             }
+                            .padding(20)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(16)
                             
                             // Serving Info
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Serving Information")
+                            VStack(alignment: .leading, spacing: 15) {
+                                Text("Portion")
                                     .font(.headline)
                                     .foregroundColor(.white)
                                 
                                 HStack(spacing: 15) {
-                                    CustomTextField(title: "Serving Size (g)", text: $servingSize, placeholder: "100")
-                                    CustomTextField(title: "Quantity", text: $quantity, placeholder: "1")
+                                    CustomTextField(title: "Taille portion (g)", text: $servingSize, placeholder: "100")
+                                    CustomTextField(title: "Quantité", text: $quantity, placeholder: "1")
                                 }
                             }
+                            .padding(20)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(16)
                             
                             // Nutrition Info
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Nutrition per Serving")
+                            VStack(alignment: .leading, spacing: 15) {
+                                Text("Valeurs nutritionnelles (pour 100g)")
                                     .font(.headline)
-                                    .foregroundColor(.white)
-                                
-                                VStack(spacing: 12) {
-                                    CustomTextField(title: "Calories", text: $calories, placeholder: "150")
-                                    CustomTextField(title: "Protein (g)", text: $protein, placeholder: "10")
-                                    CustomTextField(title: "Carbs (g)", text: $carbs, placeholder: "15")
-                                    CustomTextField(title: "Fat (g)", text: $fat, placeholder: "8")
+                            .foregroundColor(.white)
+                        
+                        VStack(spacing: 15) {
+                                    CustomTextField(title: "Calories (kcal)", text: $calories, placeholder: "150")
+                                    CustomTextField(title: "Protéines (g)", text: $protein, placeholder: "10")
+                                    CustomTextField(title: "Glucides (g)", text: $carbs, placeholder: "15")
+                                    CustomTextField(title: "Lipides (g)", text: $fat, placeholder: "8")
                                 }
                             }
+                            .padding(20)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(16)
                         }
-                        .padding(.bottom, 30)
+                        
+                        Spacer(minLength: 30)
                     }
                     .padding()
                 }
             }
-            .navigationTitle("Manual Entry")
+            .navigationTitle("Nouvel Aliment")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Annuler") {
                         dismiss()
                     }
-                    .foregroundColor(.blue)
+                    .foregroundColor(.red)
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        saveFoodItem()
-                        dismiss()
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Ajouter") {
+                        addFoodItem()
                     }
-                    .foregroundColor(.green)
                     .disabled(foodName.isEmpty || calories.isEmpty)
+                    .foregroundColor(foodName.isEmpty || calories.isEmpty ? .gray : .green)
                 }
             }
         }
         .preferredColorScheme(.dark)
     }
     
-    private func saveFoodItem() {
-        let foodItem = FoodItem(
+    private func addFoodItem() {
+        let foodItem = FoodItemEntry(
             name: foodName,
             brand: brandName.isEmpty ? nil : brandName,
             servingSize: Double(servingSize) ?? 100.0,
@@ -1613,304 +1605,38 @@ struct ManualFoodEntryView: View {
             caloriesPerServing: Int(calories) ?? 0,
             proteinPerServing: Double(protein) ?? 0.0,
             carbsPerServing: Double(carbs) ?? 0.0,
-            fatPerServing: Double(fat) ?? 0.0,
-            isManualEntry: true
+            fatPerServing: Double(fat) ?? 0.0
         )
         
-        let meal = Meal(name: selectedMealType.rawValue, mealType: selectedMealType)
-        meal.foodItems.append(foodItem)
-        meal.calculateTotals()
-        
-        modelContext.insert(meal)
-        modelContext.insert(foodItem)
-        
-        do {
-            try modelContext.save()
-        } catch {
-            print("Error saving meal: \(error)")
-        }
+        onAdd(foodItem)
+        dismiss()
     }
 }
 
-// Custom Text Field
+// MARK: - Custom Text Field
 struct CustomTextField: View {
     let title: String
     @Binding var text: String
     let placeholder: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.8))
             
             TextField(placeholder, text: $text)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(8)
         }
     }
 }
 
-// MARK: - Supporting Views for Progress
 
-// Stat Card
-struct StatCard: View {
-    let title: String
-    let value: String
-    let subtitle: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(color)
-            
-            Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-            
-            Text(title)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(.white)
-            
-            Text(subtitle)
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.7))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(16)
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(16)
-    }
-}
 
-// Strength Progress Card
-struct StrengthProgressCard: View {
-    let exercise: String
-    let current: String
-    let previous: String
-    let improvement: String
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(exercise)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                Text("Previous: \(previous)")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.7))
-            }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing, spacing: 5) {
-                Text(current)
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                
-                Text(improvement)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.green)
-            }
-        }
-        .padding(16)
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(12)
-    }
-}
 
-// Body Metric Card
-struct BodyMetricCard: View {
-    let metric: String
-    let current: String
-    let change: String
-    let isPositive: Bool
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(metric)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                Text("Current")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.7))
-            }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing, spacing: 5) {
-                Text(current)
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                
-                Text(change)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(isPositive ? .green : .red)
-            }
-        }
-        .padding(16)
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(12)
-    }
-}
-
-// MARK: - Supporting Views for Quests
-
-// Difficulty Badge
-struct DifficultyBadge: View {
-    let difficulty: WorkoutDifficulty
-    
-    var difficultyColor: Color {
-        switch difficulty {
-        case .easy:
-            return .green
-        case .normal:
-            return .blue
-        case .hard:
-            return .orange
-        case .nightmare:
-            return .red
-        }
-    }
-    
-    var body: some View {
-        Text(difficulty.rawValue)
-            .font(.caption)
-            .fontWeight(.semibold)
-            .foregroundColor(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(difficultyColor.opacity(0.8))
-            .cornerRadius(8)
-    }
-}
-
-// Available Quest Card
-struct AvailableQuestCard: View {
-    let title: String
-    let description: String
-    let reward: String
-    let estimatedTime: String
-    let difficulty: WorkoutDifficulty
-    
-    var body: some View {
-        Button {
-            // Accept quest action
-        } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.leading)
-                    
-                    Spacer()
-                    
-                    DifficultyBadge(difficulty: difficulty)
-                }
-                
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.8))
-                    .multilineTextAlignment(.leading)
-                
-                HStack {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Reward: \(reward)")
-                            .font(.caption)
-                            .foregroundColor(.yellow)
-                            .fontWeight(.semibold)
-                        
-                        Text("Time: \(estimatedTime)")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-                    
-                    Spacer()
-                    
-                    Text("Accept")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.indigo)
-                        .cornerRadius(20)
-                }
-            }
-            .padding(16)
-            .background(Color.white.opacity(0.05))
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.indigo.opacity(0.3), lineWidth: 1)
-            )
-        }
-    }
-}
-
-// Achievement Card
-struct AchievementCard: View {
-    let title: String
-    let description: String
-    let dateEarned: String
-    let xpEarned: Int
-    
-    var body: some View {
-        HStack(spacing: 15) {
-            Image(systemName: "trophy.fill")
-                .font(.system(size: 30))
-                .foregroundColor(.yellow)
-                .frame(width: 50, height: 50)
-                .background(Color.yellow.opacity(0.2))
-                .cornerRadius(12)
-            
-            VStack(alignment: .leading, spacing: 5) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.8))
-                
-                HStack {
-                    Text(dateEarned)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.6))
-                    
-                    Spacer()
-                    
-                    Text("+\(xpEarned) XP")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.yellow)
-                }
-            }
-            
-            Spacer()
-        }
-        .padding(16)
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(12)
-    }
-}
 
 
 
 #Preview {
     ContentView()
-} 
+}

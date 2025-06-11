@@ -167,10 +167,12 @@ final class Quest {
     var targetValue: Int
     var currentProgress: Int
     var isCompleted: Bool
+    var isClaimed: Bool
     var experienceReward: Int
     var questType: QuestType
     var deadline: Date?
     var createdAt: Date
+    var completedDate: Date?
     
     init(title: String, description: String, targetValue: Int, experienceReward: Int, questType: QuestType = .daily, deadline: Date? = nil) {
         self.title = title
@@ -178,21 +180,30 @@ final class Quest {
         self.targetValue = targetValue
         self.currentProgress = 0
         self.isCompleted = false
+        self.isClaimed = false
         self.experienceReward = experienceReward
         self.questType = questType
         self.deadline = deadline
         self.createdAt = Date()
+        self.completedDate = nil
     }
     
     func updateProgress(_ progress: Int) {
         currentProgress = min(currentProgress + progress, targetValue)
-        if currentProgress >= targetValue {
+        if currentProgress >= targetValue && !isCompleted {
             isCompleted = true
+            completedDate = Date()
         }
     }
     
     var progressPercentage: Double {
         return Double(currentProgress) / Double(targetValue)
+    }
+    
+    func claimReward() {
+        if isCompleted && !isClaimed {
+            isClaimed = true
+        }
     }
 }
 
